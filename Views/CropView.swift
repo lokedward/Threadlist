@@ -89,12 +89,7 @@ struct CropView: View {
                         viewSize: geometry.size
                     )
                     
-                    // DEBUG: Visualize image frame boundaries (Green)
-                    Rectangle()
-                        .stroke(Color.green, lineWidth: 2)
-                        .frame(width: visibleImageFrame.width, height: visibleImageFrame.height)
-                        .position(x: visibleImageFrame.midX, y: visibleImageFrame.midY)
-                        .allowsHitTesting(false)
+
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .background(Color.black.ignoresSafeArea()) // Move background here
