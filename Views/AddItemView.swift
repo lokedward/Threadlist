@@ -17,8 +17,7 @@ struct AddItemView: View {
     @State private var showingImageSourcePicker = true
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
-    @State private var showingImageCropper = false
-    @State private var imageToCrop: UIImage?
+
     
     // Metadata
     @State private var name = ""
@@ -47,17 +46,8 @@ struct AddItemView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
-                            .onTapGesture {
-                                imageToCrop = image
-                                showingImageCropper = true
-                            }
                         
                         HStack {
-                            Button("Edit Photo") {
-                                imageToCrop = selectedImage
-                                showingImageCropper = true
-                            }
-                            
                             Spacer()
                             
                             Button("Change Photo") {
@@ -137,18 +127,9 @@ struct AddItemView: View {
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
             .fullScreenCover(isPresented: $showingCamera) {
-                CameraView(image: $imageToCrop, showCropper: $showingImageCropper)
+                CameraView(image: $selectedImage)
             }
-            .fullScreenCover(isPresented: $showingImageCropper) {
-                if let image = imageToCrop {
-                    ScrollableCropperView(image: image) { croppedImage in
-                        selectedImage = croppedImage
-                        showingImageCropper = false
-                    } onCancel: {
-                        showingImageCropper = false
-                    }
-                }
-            }
+
             .onChange(of: selectedPhotoItem) { _, newValue in
                 guard let item = newValue else { return }
                 
@@ -173,8 +154,7 @@ struct AddItemView: View {
                     try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
                     
                     await MainActor.run {
-                        imageToCrop = downsampledImage
-                        showingImageCropper = true
+                        selectedImage = downsampledImage
                         selectedPhotoItem = nil // Reset picker selection
                         isProcessingImage = false
                     }
@@ -237,16 +217,16 @@ struct AddItemView: View {
 
 
 // MARK: - Camera View
+// MARK: - Camera View
 struct CameraView: UIViewControllerRepresentable {
     @Binding var image: UIImage?
-    @Binding var showCropper: Bool
     @Environment(\.dismiss) private var dismiss
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.delegate = context.coordinator
-        picker.allowsEditing = false // We'll use our own cropper
+        picker.allowsEditing = false
         return picker
     }
     
@@ -265,8 +245,13 @@ struct CameraView: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let original = info[.originalImage] as? UIImage {
-                parent.image = original
-                parent.showCropper = true
+                // Resize camera images too (often very large)
+                // Since this is a delegate callback (Main Thread usually), we might want to background this?
+                // But native camera picker dismiss animation covers this usually.
+                // For safety, let's just assign. The user can take the hit or we downsample here.
+                // Camera images are usually ~12MP.
+                 let resized = original.resized(to: 1500)
+                 parent.image = resized
             }
             parent.dismiss()
         }
