@@ -150,12 +150,16 @@ struct AddItemView: View {
             }
             .onChange(of: selectedPhotoItem) { _, newValue in
                 Task {
-                    if let data = try? await newValue?.loadTransferable(type: Data.self),
-                       let uiImage = UIImage(data: data) {
-                        await MainActor.run {
-                            imageToCrop = uiImage
-                            showingImageCropper = true
-                        }
+                    guard let item = newValue,
+                          let data = try? await item.loadTransferable(type: Data.self),
+                          let uiImage = UIImage(data: data) else { return }
+                    
+                    // Resize large images to prevent memory crash/UI freeze
+                    let resizedImage = uiImage.resized(to: 1500)
+                    
+                    await MainActor.run {
+                        imageToCrop = resizedImage
+                        showingImageCropper = true
                     }
                 }
             }
