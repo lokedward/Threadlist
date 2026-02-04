@@ -44,29 +44,13 @@ struct CropView: View {
         NavigationStack {
             GeometryReader { geometry in
                 ZStack {
-                    Color.black.ignoresSafeArea()
-                    
                     // Image layer (zoomable/pannable)
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
                         .scaleEffect(imageScale)
                         .offset(imageOffset)
-                        .background(
-                            GeometryReader { imageGeometry in
-                                Color.clear
-                                    .onAppear {
-                                        // Get the actual frame of the image in the parent coordinate space
-                                        let frame = imageGeometry.frame(in: .named("CropContainer"))
-                                        if imageFrame == .zero {
-                                            imageFrame = frame
-                                        }
-                                    }
-                                    .onChange(of: imageGeometry.size) { _, _ in
-                                        imageFrame = imageGeometry.frame(in: .named("CropContainer"))
-                                    }
-                            }
-                        )
                         .gesture(
                             MagnificationGesture()
                                 .onChanged { value in
@@ -103,13 +87,15 @@ struct CropView: View {
                         viewSize: geometry.size
                     )
                     
-                    // DEBUG: Visualize image frame boundaries
+                    // DEBUG: Visualize image frame boundaries (Green)
                     Rectangle()
                         .stroke(Color.green, lineWidth: 2)
                         .frame(width: visibleImageFrame.width, height: visibleImageFrame.height)
                         .position(x: visibleImageFrame.midX, y: visibleImageFrame.midY)
                         .allowsHitTesting(false)
                 }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(Color.black.ignoresSafeArea()) // Move background here
                 .coordinateSpace(name: "CropContainer")
                 .onChange(of: geometry.size) { _, newSize in
                     if cropRect == .zero && newSize.width > 0 && newSize.height > 0 {
@@ -145,10 +131,10 @@ struct CropView: View {
         
         var displaySize: CGSize
         if imageAspect > viewAspect {
-            // Image is wider - fits to width
+            // Image is wider than view (or fits width)
             displaySize = CGSize(width: viewSize.width, height: viewSize.width / imageAspect)
         } else {
-            // Image is taller - fits to height
+            // Image is taller than view
             displaySize = CGSize(width: viewSize.height * imageAspect, height: viewSize.height)
         }
         
