@@ -200,7 +200,7 @@ struct CropOverlay: View {
     @Binding var imageFrame: CGRect
     let viewSize: CGSize
     
-    private let handleSize: CGFloat = 30
+    private let handleSize: CGFloat = 24
     private let minCropSize: CGFloat = 100
     
     @State private var initialCropRect: CGRect = .zero
