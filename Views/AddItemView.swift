@@ -140,7 +140,7 @@ struct AddItemView: View {
             }
             .fullScreenCover(isPresented: $showingImageCropper) {
                 if let image = imageToCrop {
-                    SharedImageCropperView(image: image) { croppedImage in
+                    ScrollableCropperView(image: image) { croppedImage in
                         selectedImage = croppedImage
                         showingImageCropper = false
                     } onCancel: {
