@@ -425,7 +425,10 @@ struct CameraViewForEdit: UIViewControllerRepresentable {
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let original = info[.originalImage] as? UIImage {
                 parent.image = original
-                parent.showCropper = true
+                // Delay before showing cropper to prevent iOS 18 black screen conflict
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    parent.showCropper = true
+                }
             }
             parent.dismiss()
         }

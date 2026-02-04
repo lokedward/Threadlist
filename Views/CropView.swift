@@ -63,12 +63,22 @@ struct CropView: View {
                         viewSize: geometry.size
                     )
                 }
+                .onChange(of: geometry.size) { _, newSize in
+                    // Only initialize once when geometry is actually ready
+                    if cropRect == .zero && newSize.width > 0 && newSize.height > 0 {
+                        // Calculate initial image display frame
+                        imageFrame = calculateImageFrame(in: newSize)
+                        
+                        // Initialize crop rect to match image bounds (full image)
+                        cropRect = imageFrame
+                    }
+                }
                 .onAppear {
-                    // Calculate initial image display frame
-                    imageFrame = calculateImageFrame(in: geometry.size)
-                    
-                    // Initialize crop rect to match image bounds (full image)
-                    cropRect = imageFrame
+                    // Trigger initial calculation
+                    if geometry.size.width > 0 && geometry.size.height > 0 {
+                        imageFrame = calculateImageFrame(in: geometry.size)
+                        cropRect = imageFrame
+                    }
                 }
             }
             .navigationTitle("Crop Image")
