@@ -32,6 +32,21 @@ struct CropView: View {
                         .aspectRatio(contentMode: .fit)
                         .scaleEffect(imageScale)
                         .offset(imageOffset)
+                        .background(
+                            GeometryReader { imageGeometry in
+                                Color.clear
+                                    .onAppear {
+                                        // Get the actual frame of the image in the parent coordinate space
+                                        let frame = imageGeometry.frame(in: .named("CropContainer"))
+                                        if imageFrame == .zero {
+                                            imageFrame = frame
+                                        }
+                                    }
+                                    .onChange(of: imageGeometry.size) { _, _ in
+                                        imageFrame = imageGeometry.frame(in: .named("CropContainer"))
+                                    }
+                            }
+                        )
                         .gesture(
                             MagnificationGesture()
                                 .onChanged { value in
@@ -67,14 +82,8 @@ struct CropView: View {
                         imageFrame: imageFrame,
                         viewSize: geometry.size
                     )
-                    
-                    // DEBUG: Visualize image frame boundaries
-                    Rectangle()
-                        .stroke(Color.red.opacity(0.5), lineWidth: 1)
-                        .frame(width: imageFrame.width, height: imageFrame.height)
-                        .position(x: imageFrame.midX, y: imageFrame.midY)
-                        .allowsHitTesting(false)
                 }
+                .coordinateSpace(name: "CropContainer")
                 .onChange(of: geometry.size) { _, newSize in
                     if cropRect == .zero && newSize.width > 0 && newSize.height > 0 {
                         imageFrame = calculateImageFrame(in: newSize)
@@ -218,11 +227,12 @@ struct CropOverlay: View {
                         )
                 )
             
-            // Invisible draggable area (entire crop rectangle)
+            // Crop rectangle border (white, clean)
             Rectangle()
-                .fill(Color.clear)
+                .stroke(Color.white, lineWidth: 2)
                 .frame(width: cropRect.width, height: cropRect.height)
                 .position(x: cropRect.midX, y: cropRect.midY)
+                .contentShape(Rectangle())
                 .gesture(
                     DragGesture()
                         .onChanged { value in
@@ -243,13 +253,6 @@ struct CropOverlay: View {
                             isDraggingCrop = false
                         }
                 )
-            
-            // Crop rectangle border (white, clean) - visual only
-            Rectangle()
-                .stroke(Color.white, lineWidth: 2)
-                .frame(width: cropRect.width, height: cropRect.height)
-                .position(x: cropRect.midX, y: cropRect.midY)
-                .allowsHitTesting(false)
         }
     }
     
