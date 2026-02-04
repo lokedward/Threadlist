@@ -135,27 +135,26 @@ class CropperViewController: UIViewController, UIScrollViewDelegate {
         imageView.sizeToFit()
         scrollView.contentSize = imageView.bounds.size
         
-        // Calculate min scale to fill crop box (Aspect Fill)
-        // OR fit crop box (Aspect Fit)?
-        // User asked for "canvas style" freedom. "Fit" is a safer default so they see everything.
-        // But traditionally croppers default to "Fill" to avoid black bars.
-        // Let's default to "Fill" but allow zooming out.
-        
         let crop = cropRect
         let imgW = image.size.width
         let imgH = image.size.height
         
+        // Avoid division by zero
+        guard imgW > 0, imgH > 0 else { return }
+        
         let scaleW = crop.width / imgW
         let scaleH = crop.height / imgH
         
-        // Fill: max(scaleW, scaleH)
-        // Fit: min(scaleW, scaleH)
-        let fillScale = max(scaleW, scaleH)
+        // "Fit" Scale: Shows the whole image inside the box (Letterbox/Pillarbox)
+        let fitScale = min(scaleW, scaleH)
         
-        scrollView.zoomScale = fillScale
+        // Update ScrollView constraints
+        // Allow zooming out further than fit (Canvas style)
+        scrollView.minimumZoomScale = fitScale * 0.5
+        scrollView.maximumZoomScale = max(fitScale * 10.0, 5.0)
         
-        // Center the image initially
-        // (Handled by centerContent + updateContentInset)
+        // Start at Aspect Fit ("Full Resolution" / Whole Image)
+        scrollView.zoomScale = fitScale
     }
     
     private func updateContentInset() {
