@@ -418,6 +418,7 @@ struct ImageCropperViewForEdit: View {
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
+    @State private var viewSize: CGSize = .zero
     
     var body: some View {
         NavigationStack {
@@ -432,6 +433,27 @@ struct ImageCropperViewForEdit: View {
                         .aspectRatio(contentMode: .fit)
                         .scaleEffect(scale)
                         .offset(offset)
+                        .overlay(GeometryReader { geo in
+                            Color.clear
+                                .onAppear {
+                                    viewSize = geo.size
+                                    scale = 1.0
+                                    offset = .zero
+                                    
+                                    let aspect = image.size.width / image.size.height
+                                    let viewAspect = geo.size.width / geo.size.height
+                                    let fittedWidth = viewAspect > aspect ? geo.size.height * aspect : geo.size.width
+                                    let fittedHeight = viewAspect > aspect ? geo.size.height : geo.size.width / aspect
+                                    
+                                    let minScaleWidth = cropSize / fittedWidth
+                                    let minScaleHeight = cropSize / fittedHeight
+                                    let minNeeded = max(minScaleWidth, minScaleHeight)
+                                    
+                                    if minNeeded > 1.0 {
+                                        scale = minNeeded
+                                    }
+                                }
+                        })
                         .gesture(
                             MagnificationGesture()
                                 .onChanged { value in
@@ -441,6 +463,9 @@ struct ImageCropperViewForEdit: View {
                                 }
                                 .onEnded { _ in
                                     lastScale = 1.0
+                                    withAnimation {
+                                        validateState(cropSize: cropSize)
+                                    }
                                 }
                         )
                         .simultaneousGesture(
@@ -453,6 +478,9 @@ struct ImageCropperViewForEdit: View {
                                 }
                                 .onEnded { _ in
                                     lastOffset = offset
+                                    withAnimation {
+                                        validateState(cropSize: cropSize)
+                                    }
                                 }
                         )
                     
@@ -473,7 +501,12 @@ struct ImageCropperViewForEdit: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        let cropped = cropImage()
+                        let geoWidth = UIScreen.main.bounds.width
+                        let geoHeight = UIScreen.main.bounds.height
+                        let shortSide = min(geoWidth, geoHeight)
+                        let calculatedCropSize = shortSide - 40
+                        
+                        let cropped = cropImage(cropSize: calculatedCropSize)
                         onSave(cropped)
                     }
                     .fontWeight(.semibold)
@@ -494,12 +527,68 @@ struct ImageCropperViewForEdit: View {
         }
     }
     
-    private func cropImage() -> UIImage {
-        let size = min(image.size.width, image.size.height)
-        let x = (image.size.width - size) / 2
-        let y = (image.size.height - size) / 2
+    private func validateState(cropSize: CGFloat) {
+        let aspect = image.size.width / image.size.height
+        let vW = viewSize.width > 0 ? viewSize.width : 300
+        let vH = viewSize.height > 0 ? viewSize.height : 300
         
-        let cropRect = CGRect(x: x, y: y, width: size, height: size)
+        let viewAspect = vW / vH
+        let renderedWidth = viewAspect > aspect ? vH * aspect : vW
+        let renderedHeight = viewAspect > aspect ? vH : vW / aspect
+        
+        let currentWidth = renderedWidth * scale
+        let currentHeight = renderedHeight * scale
+        
+        if currentWidth < cropSize || currentHeight < cropSize {
+            let minScaleW = cropSize / renderedWidth
+            let minScaleH = cropSize / renderedHeight
+            scale = max(minScaleW, minScaleH)
+        }
+        
+        let maxOffsetX = (renderedWidth * scale - cropSize) / 2
+        let maxOffsetY = (renderedHeight * scale - cropSize) / 2
+        
+        if maxOffsetX >= 0 {
+            offset.width = min(max(offset.width, -maxOffsetX), maxOffsetX)
+        }
+        
+        if maxOffsetY >= 0 {
+            offset.height = min(max(offset.height, -maxOffsetY), maxOffsetY)
+        }
+        
+        lastOffset = offset
+        lastScale = 1.0
+    }
+    
+    private func cropImage(cropSize: CGFloat) -> UIImage {
+        let initialAspect = image.size.width / image.size.height
+        let vW = viewSize.width > 0 ? viewSize.width : image.size.width
+        let vH = viewSize.height > 0 ? viewSize.height : image.size.height
+        let viewAspect = vW / vH
+        
+        let renderedWidth = viewAspect > initialAspect ? vH * initialAspect : vW
+        let screenToImageRatio = image.size.width / renderedWidth
+        let totalScale = scale
+        
+        let cropWidthInBaseRendered = cropSize / totalScale
+        let cropHeightInBaseRendered = cropSize / totalScale
+        
+        let offsetXInBaseRendered = offset.width / totalScale
+        let offsetYInBaseRendered = offset.height / totalScale
+        
+        let centerX = (renderedWidth / 2) - offsetXInBaseRendered
+        let renderedHeight = renderedWidth / initialAspect
+        let centerY = (renderedHeight / 2) - offsetYInBaseRendered
+        
+        let cropX = centerX - (cropWidthInBaseRendered / 2)
+        let cropY = centerY - (cropHeightInBaseRendered / 2)
+        
+        let pixelX = cropX * screenToImageRatio
+        let pixelY = cropY * screenToImageRatio
+        let pixelWidth = cropWidthInBaseRendered * screenToImageRatio
+        let pixelHeight = cropHeightInBaseRendered * screenToImageRatio
+        
+        let cropRect = CGRect(x: pixelX, y: pixelY, width: pixelWidth, height: pixelHeight)
         
         guard let cgImage = image.cgImage?.cropping(to: cropRect) else {
             return image
