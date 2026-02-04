@@ -18,7 +18,27 @@ struct CropView: View {
     // Crop frame dragging
     @State private var isDraggingCrop = false
     @State private var cropDragStart: CGPoint = .zero
+
     @State private var cropRectAtDragStart: CGRect = .zero
+    
+    // Computed property for the actual visual frame including scale & offset
+    private var visibleImageFrame: CGRect {
+        guard imageFrame != .zero else { return .zero }
+        let size = CGSize(
+            width: imageFrame.width * imageScale,
+            height: imageFrame.height * imageScale
+        )
+        let center = CGPoint(
+            x: imageFrame.midX + imageOffset.width,
+            y: imageFrame.midY + imageOffset.height
+        )
+        return CGRect(
+            x: center.x - size.width / 2,
+            y: center.y - size.height / 2,
+            width: size.width,
+            height: size.height
+        )
+    }
     
     var body: some View {
         NavigationStack {
@@ -79,9 +99,16 @@ struct CropView: View {
                         isDraggingCrop: $isDraggingCrop,
                         cropDragStart: $cropDragStart,
                         cropRectAtDragStart: $cropRectAtDragStart,
-                        imageFrame: imageFrame,
+                        imageFrame: visibleImageFrame,
                         viewSize: geometry.size
                     )
+                    
+                    // DEBUG: Visualize image frame boundaries
+                    Rectangle()
+                        .stroke(Color.green, lineWidth: 2)
+                        .frame(width: visibleImageFrame.width, height: visibleImageFrame.height)
+                        .position(x: visibleImageFrame.midX, y: visibleImageFrame.midY)
+                        .allowsHitTesting(false)
                 }
                 .coordinateSpace(name: "CropContainer")
                 .onChange(of: geometry.size) { _, newSize in
@@ -256,12 +283,13 @@ struct CropOverlay: View {
         }
     }
     
+    
     private func updateCropPosition(translation: CGSize) {
         var newRect = cropRectAtDragStart
         newRect.origin.x += translation.width
         newRect.origin.y += translation.height
         
-        // Keep crop frame within image bounds
+        // Keep crop frame within visible image bounds (bounds passed in as imageFrame)
         if newRect.minX < imageFrame.minX {
             newRect.origin.x = imageFrame.minX
         }
