@@ -129,22 +129,29 @@ struct AddItemView: View {
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
             .fullScreenCover(isPresented: $showingCamera, onDismiss: {
-                if imageToCrop != nil {
-                    showingImageCropper = true
+                // Small delay to ensure camera is fully dismissed on iOS 18 before showing cropper
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    if imageToCrop != nil {
+                        showingImageCropper = true
+                    }
                 }
             }) {
                 CameraView(image: $imageToCrop)
             }
-            .fullScreenCover(isPresented: $showingImageCropper) {
-                if let image = imageToCrop {
-                    CropView(image: image) { croppedImage in
-                        selectedImage = croppedImage
-                        showingImageCropper = false
-                    } onCancel: {
-                        showingImageCropper = false
+            
+            // Separate anchor for cropper to avoid presentation collisions on iOS 18
+            Color.clear
+                .frame(width: 1, height: 1)
+                .fullScreenCover(isPresented: $showingImageCropper) {
+                    if let image = imageToCrop {
+                        CropView(image: image) { croppedImage in
+                            selectedImage = croppedImage
+                            showingImageCropper = false
+                        } onCancel: {
+                            showingImageCropper = false
+                        }
                     }
                 }
-            }
 
             .onChange(of: selectedPhotoItem) { _, newValue in
                 guard let item = newValue else { return }
