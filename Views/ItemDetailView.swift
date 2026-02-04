@@ -426,7 +426,7 @@ struct CameraViewForEdit: UIViewControllerRepresentable {
             if let original = info[.originalImage] as? UIImage {
                 parent.image = original
                 // Delay before showing cropper to prevent iOS 18 black screen conflict
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     parent.showCropper = true
                 }
             }
