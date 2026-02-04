@@ -28,6 +28,8 @@ struct ItemDetailView: View {
     @State private var showingImageSourcePicker = false
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
+    @State private var showingImageCropper = false
+    @State private var imageToCrop: UIImage?
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newImage: UIImage?
@@ -140,7 +142,17 @@ struct ItemDetailView: View {
         }
         .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
         .fullScreenCover(isPresented: $showingCamera) {
-            CameraViewForEdit(image: $newImage)
+            CameraViewForEdit(image: $imageToCrop, showCropper: $showingImageCropper)
+        }
+        .fullScreenCover(isPresented: $showingImageCropper) {
+            if let image = imageToCrop {
+                CropView(image: image) { croppedImage in
+                    newImage = croppedImage
+                    showingImageCropper = false
+                } onCancel: {
+                    showingImageCropper = false
+                }
+            }
         }
 
         .onChange(of: selectedPhotoItem) { _, newValue in
@@ -166,7 +178,8 @@ struct ItemDetailView: View {
                 try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
                 
                 await MainActor.run {
-                    newImage = downsampledImage
+                    imageToCrop = downsampledImage
+                    showingImageCropper = true
                     selectedPhotoItem = nil
                     isProcessingImage = false
                 }
@@ -385,6 +398,7 @@ struct ItemDetailView: View {
 // MARK: - Camera View for Edit
 struct CameraViewForEdit: UIViewControllerRepresentable {
     @Binding var image: UIImage?
+    @Binding var showCropper: Bool
     @Environment(\.dismiss) private var dismiss
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
@@ -410,9 +424,8 @@ struct CameraViewForEdit: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let original = info[.originalImage] as? UIImage {
-                // Resize safe
-                let resized = original.resized(to: 1500)
-                parent.image = resized
+                parent.image = original
+                parent.showCropper = true
             }
             parent.dismiss()
         }

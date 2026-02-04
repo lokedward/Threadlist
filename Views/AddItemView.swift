@@ -17,6 +17,8 @@ struct AddItemView: View {
     @State private var showingImageSourcePicker = true
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
+    @State private var showingImageCropper = false
+    @State private var imageToCrop: UIImage?
 
     
     // Metadata
@@ -127,7 +129,17 @@ struct AddItemView: View {
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
             .fullScreenCover(isPresented: $showingCamera) {
-                CameraView(image: $selectedImage)
+                CameraView(image: $imageToCrop, showCropper: $showingImageCropper)
+            }
+            .fullScreenCover(isPresented: $showingImageCropper) {
+                if let image = imageToCrop {
+                    CropView(image: image) { croppedImage in
+                        selectedImage = croppedImage
+                        showingImageCropper = false
+                    } onCancel: {
+                        showingImageCropper = false
+                    }
+                }
             }
 
             .onChange(of: selectedPhotoItem) { _, newValue in
@@ -154,7 +166,8 @@ struct AddItemView: View {
                     try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
                     
                     await MainActor.run {
-                        selectedImage = downsampledImage
+                        imageToCrop = downsampledImage
+                        showingImageCropper = true
                         selectedPhotoItem = nil // Reset picker selection
                         isProcessingImage = false
                     }
@@ -220,6 +233,7 @@ struct AddItemView: View {
 // MARK: - Camera View
 struct CameraView: UIViewControllerRepresentable {
     @Binding var image: UIImage?
+    @Binding var showCropper: Bool
     @Environment(\.dismiss) private var dismiss
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
@@ -245,13 +259,8 @@ struct CameraView: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let original = info[.originalImage] as? UIImage {
-                // Resize camera images too (often very large)
-                // Since this is a delegate callback (Main Thread usually), we might want to background this?
-                // But native camera picker dismiss animation covers this usually.
-                // For safety, let's just assign. The user can take the hit or we downsample here.
-                // Camera images are usually ~12MP.
-                 let resized = original.resized(to: 1500)
-                 parent.image = resized
+                parent.image = original
+                parent.showCropper = true
             }
             parent.dismiss()
         }
