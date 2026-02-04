@@ -11,6 +11,8 @@ struct CropView: View {
     @State private var lastScale: CGFloat = 1.0
     @State private var lastOffset: CGSize = .zero
     
+    // Track the actual image display frame
+    @State private var imageFrame: CGRect = .zero
     // Crop rectangle in screen coordinates
     @State private var cropRect: CGRect = .zero
     @State private var draggedCorner: Corner?
@@ -57,18 +59,16 @@ struct CropView: View {
                     CropOverlay(
                         cropRect: $cropRect,
                         draggedCorner: $draggedCorner,
+                        imageFrame: $imageFrame,
                         viewSize: geometry.size
                     )
                 }
                 .onAppear {
-                    // Initialize crop rect to center 80% of screen
-                    let size = min(geometry.size.width, geometry.size.height) * 0.8
-                    cropRect = CGRect(
-                        x: (geometry.size.width - size) / 2,
-                        y: (geometry.size.height - size) / 2,
-                        width: size,
-                        height: size
-                    )
+                    // Calculate initial image display frame
+                    imageFrame = calculateImageFrame(in: geometry.size)
+                    
+                    // Initialize crop rect to match image bounds (full image)
+                    cropRect = imageFrame
                 }
             }
             .navigationTitle("Crop Image")
@@ -83,6 +83,27 @@ struct CropView: View {
                 }
             }
         }
+    }
+    
+    private func calculateImageFrame(in viewSize: CGSize) -> CGRect {
+        let imageSize = image.size
+        let imageAspect = imageSize.width / imageSize.height
+        let viewAspect = viewSize.width / viewSize.height
+        
+        var displaySize: CGSize
+        if imageAspect > viewAspect {
+            // Image is wider, fit to width
+            displaySize = CGSize(width: viewSize.width, height: viewSize.width / imageAspect)
+        } else {
+            // Image is taller, fit to height
+            displaySize = CGSize(width: viewSize.height * imageAspect, height: viewSize.height)
+        }
+        
+        // Center the image in the view
+        let x = (viewSize.width - displaySize.width) / 2
+        let y = (viewSize.height - displaySize.height) / 2
+        
+        return CGRect(x: x, y: y, width: displaySize.width, height: displaySize.height)
     }
     
     private func handleDone() {
@@ -128,7 +149,7 @@ struct CropView: View {
             )
             
             // Image frame in screen coordinates
-            let imageFrame = CGRect(
+            let currentImageFrame = CGRect(
                 x: imageCenter.x - displaySize.width / 2,
                 y: imageCenter.y - displaySize.height / 2,
                 width: displaySize.width,
@@ -137,8 +158,8 @@ struct CropView: View {
             
             // Calculate crop rect relative to image frame
             let relativeRect = CGRect(
-                x: (cropRect.minX - imageFrame.minX) / displaySize.width,
-                y: (cropRect.minY - imageFrame.minY) / displaySize.height,
+                x: (cropRect.minX - currentImageFrame.minX) / displaySize.width,
+                y: (cropRect.minY - currentImageFrame.minY) / displaySize.height,
                 width: cropRect.width / displaySize.width,
                 height: cropRect.height / displaySize.height
             )
@@ -166,10 +187,13 @@ struct CropView: View {
 struct CropOverlay: View {
     @Binding var cropRect: CGRect
     @Binding var draggedCorner: CropView.Corner?
+    @Binding var imageFrame: CGRect
     let viewSize: CGSize
     
     private let handleSize: CGFloat = 30
     private let minCropSize: CGFloat = 100
+    
+    @State private var initialCropRect: CGRect = .zero
     
     var body: some View {
         ZStack {
@@ -202,7 +226,10 @@ struct CropOverlay: View {
                     .gesture(
                         DragGesture()
                             .onChanged { value in
-                                draggedCorner = corner
+                                if draggedCorner == nil {
+                                    initialCropRect = cropRect
+                                    draggedCorner = corner
+                                }
                                 updateCropRect(for: corner, translation: value.translation)
                             }
                             .onEnded { _ in
@@ -227,7 +254,7 @@ struct CropOverlay: View {
     }
     
     private func updateCropRect(for corner: CropView.Corner, translation: CGSize) {
-        var newRect = cropRect
+        var newRect = initialCropRect
         
         switch corner {
         case .topLeft:
@@ -253,9 +280,9 @@ struct CropOverlay: View {
         
         // Enforce minimum size
         if newRect.width >= minCropSize && newRect.height >= minCropSize {
-            // Keep within bounds
-            if newRect.minX >= 0 && newRect.maxX <= viewSize.width &&
-               newRect.minY >= 0 && newRect.maxY <= viewSize.height {
+            // Keep within IMAGE bounds (not screen bounds)
+            if newRect.minX >= imageFrame.minX && newRect.maxX <= imageFrame.maxX &&
+               newRect.minY >= imageFrame.minY && newRect.maxY <= imageFrame.maxY {
                 cropRect = newRect
             }
         }
