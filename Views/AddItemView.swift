@@ -348,7 +348,7 @@ struct AddItemPickerModifiers: ViewModifier {
                 Button("Cancel", role: .cancel) {}
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
-            .photosPicker(isPresented: $showingBulkPhotoPicker, selection: $selectedPhotoItems, selectionLimit: 50, matching: .images)
+            .photosPicker(isPresented: $showingBulkPhotoPicker, selection: $selectedPhotoItems, maxSelectionCount: 50, matching: .images)
             .fullScreenCover(isPresented: $showingCamera, onDismiss: handleCameraDismiss) {
                 ImagePickerView(image: $imageToCrop, sourceType: .camera)
             }
