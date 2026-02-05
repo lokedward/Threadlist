@@ -132,12 +132,12 @@ struct AddItemView: View {
             .fullScreenCover(isPresented: $showingCamera, onDismiss: {
                 // Ensure camera is fully dismissed on iOS 18 before selecting the cropping item
                 if let image = imageToCrop {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.Animation.modalTransitionDelay) {
                         croppingItem = CroppableImage(image: image)
                     }
                 }
             }) {
-                CameraView(image: $imageToCrop)
+                ImagePickerView(image: $imageToCrop, sourceType: .camera)
             }
             
             .fullScreenCover(item: $croppingItem) { item in
@@ -170,7 +170,7 @@ struct AddItemView: View {
                     
                     // Critical Fix: Wait for PhotosPicker to fully dismiss before presenting cropper
                     // Prevents "Unbalanced calls to begin/end appearance transitions" freeze
-                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
+                    try? await Task.sleep(nanoseconds: AppConstants.Animation.processingDelay)
                     
                     await MainActor.run {
                         croppingItem = CroppableImage(image: downsampledImage)
@@ -205,75 +205,40 @@ struct AddItemView: View {
         
         isSaving = true
         
-        // Save image to disk (already cropped by user)
-        guard let imageID = ImageStorageService.shared.saveImage(image) else {
-            isSaving = false
-            return
-        }
-        
         // Parse tags
         let tags = tagsText
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
         
-        // Create item
-        let item = ClothingItem(
-            name: name,
-            category: category,
-            brand: brand.isEmpty ? nil : brand,
-            size: size.isEmpty ? nil : size,
-            imageID: imageID,
-            tags: tags
-        )
-        
-        modelContext.insert(item)
-        try? modelContext.save()
-        
-        dismiss()
-    }
-}
-
-
-
-// MARK: - Camera View
-struct CameraView: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    @Environment(\.dismiss) private var dismiss
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.delegate = context.coordinator
-        picker.allowsEditing = false
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: CameraView
-        
-        init(_ parent: CameraView) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let original = info[.originalImage] as? UIImage {
-                parent.image = original
+        Task {
+            do {
+                try await ClosetDataService.shared.addItem(
+                    name: name,
+                    category: category,
+                    image: image,
+                    brand: brand.isEmpty ? nil : brand,
+                    size: size.isEmpty ? nil : size,
+                    tags: tags,
+                    context: modelContext
+                )
+                
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Error saving item: \(error)")
+                await MainActor.run {
+                    isSaving = false
+                }
             }
-            parent.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.dismiss()
         }
     }
 }
+
+
+
+
 
 #Preview {
     AddItemView()

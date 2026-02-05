@@ -145,12 +145,12 @@ struct ItemDetailView: View {
         .fullScreenCover(isPresented: $showingCamera, onDismiss: {
             // Ensure camera is fully dismissed on iOS 18 before selecting the cropping item
             if let image = imageToCrop {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.Animation.modalTransitionDelay) {
                     croppingItem = CroppableImage(image: image)
                 }
             }
         }) {
-            CameraViewForEdit(image: $imageToCrop)
+            ImagePickerView(image: $imageToCrop, sourceType: .camera)
         }
         
         .fullScreenCover(item: $croppingItem) { item in
@@ -182,7 +182,7 @@ struct ItemDetailView: View {
                 }
                 
                 // Critical Fix: Wait for PhotosPicker to fully dismiss before presenting cropper
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
+                try? await Task.sleep(nanoseconds: AppConstants.Animation.processingDelay)
                 
                 await MainActor.run {
                     croppingItem = CroppableImage(image: downsampledImage)
@@ -369,143 +369,52 @@ struct ItemDetailView: View {
     }
     
     private func saveEdits() {
-        item.name = editName
-        item.brand = editBrand.isEmpty ? nil : editBrand
-        item.size = editSize.isEmpty ? nil : editSize
-        item.category = editCategory
-        item.tags = editTagsText
+        let tags = editTagsText
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
-        
-        // Save new image if changed
-        if let newImg = newImage {
-            // Delete old image
-            ImageStorageService.shared.deleteImage(withID: item.imageID)
             
-            // Save new image
-            if let newImageID = ImageStorageService.shared.saveImage(newImg) {
-                item.imageID = newImageID
-                itemImage = newImg
+        Task {
+            do {
+                try await ClosetDataService.shared.updateItem(
+                    item,
+                    name: editName,
+                    category: editCategory,
+                    newImage: newImage,
+                    brand: editBrand.isEmpty ? nil : editBrand,
+                    size: editSize.isEmpty ? nil : editSize,
+                    tags: tags,
+                    context: modelContext
+                )
+                
+                await MainActor.run {
+                    if newImage != nil {
+                        loadImage() // Refresh the displayed image
+                    }
+                    newImage = nil
+                    isEditing = false
+                }
+            } catch {
+                print("Error updating item: \(error)")
             }
         }
-        
-        newImage = nil
-        isEditing = false
-        try? modelContext.save()
     }
     
     private func deleteItem() {
-        ImageStorageService.shared.deleteImage(withID: item.imageID)
-        modelContext.delete(item)
-        try? modelContext.save()
-        dismiss()
-    }
-}
-
-// MARK: - Camera View for Edit
-struct CameraViewForEdit: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    @Environment(\.dismiss) private var dismiss
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.delegate = context.coordinator
-        picker.allowsEditing = false
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: CameraViewForEdit
-        
-        init(_ parent: CameraViewForEdit) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let original = info[.originalImage] as? UIImage {
-                parent.image = original
-            }
-            parent.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.dismiss()
-        }
-    }
-}
-
-
-
-struct DetailRow: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.body)
-        }
-    }
-}
-
-// Simple flow layout for tags
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = FlowResult(in: proposal.width ?? 0, subviews: subviews, spacing: spacing)
-        return result.size
-    }
-    
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing)
-        for (index, subview) in subviews.enumerated() {
-            subview.place(at: CGPoint(x: bounds.minX + result.positions[index].x,
-                                       y: bounds.minY + result.positions[index].y),
-                         proposal: .unspecified)
-        }
-    }
-    
-    struct FlowResult {
-        var size: CGSize = .zero
-        var positions: [CGPoint] = []
-        
-        init(in maxWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
-            var x: CGFloat = 0
-            var y: CGFloat = 0
-            var rowHeight: CGFloat = 0
-            
-            for subview in subviews {
-                let size = subview.sizeThatFits(.unspecified)
-                
-                if x + size.width > maxWidth && x > 0 {
-                    x = 0
-                    y += rowHeight + spacing
-                    rowHeight = 0
+        Task {
+            do {
+                try await ClosetDataService.shared.deleteItem(item, context: modelContext)
+                await MainActor.run {
+                    dismiss()
                 }
-                
-                positions.append(CGPoint(x: x, y: y))
-                rowHeight = max(rowHeight, size.height)
-                x += size.width + spacing
-                
-                self.size.width = max(self.size.width, x)
+            } catch {
+                print("Error deleting item: \(error)")
             }
-            
-            self.size.height = y + rowHeight
         }
     }
 }
+
+
 
 #Preview {
     let item = ClothingItem(name: "Vintage Jacket", brand: "Levi's", size: "M", tags: ["denim", "casual"])

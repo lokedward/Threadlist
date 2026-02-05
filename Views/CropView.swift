@@ -1,10 +1,7 @@
 import SwiftUI
 import UIKit
 
-struct CroppableImage: Identifiable {
-    let id = UUID()
-    let image: UIImage
-}
+
 
 struct CropView: View {
     let image: UIImage
