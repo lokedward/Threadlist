@@ -23,23 +23,22 @@ struct ItemThumbnailView: View {
     
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // Image
-            Group {
-                if let image = image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    PoshTheme.Colors.secondaryAccent.opacity(0.05)
-                        .overlay {
-                            Image(systemName: "handbag")
-                                .font(.system(size: 30, weight: .ultraLight))
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.3))
-                        }
+            // Image Container
+            Rectangle()
+                .fill(PoshTheme.Colors.secondaryAccent.opacity(0.05))
+                .aspectRatio(1, contentMode: .fill)
+                .overlay {
+                    if let image = image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Image(systemName: "handbag")
+                            .font(.system(size: 30, weight: .ultraLight))
+                            .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.3))
+                    }
                 }
-            }
-            .aspectRatio(1, contentMode: .fit)
-            .clipped()
+                .clipped()
             
             // Info Overlay
             VStack {
@@ -63,7 +62,6 @@ struct ItemThumbnailView: View {
             }
         }
         .frame(width: size == .small ? size.dimension : nil)
-        .aspectRatio(1, contentMode: .fit)
         .poshCard()
         .onAppear {
             loadImage()
