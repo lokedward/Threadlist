@@ -30,6 +30,7 @@ struct ItemDetailView: View {
     @State private var showingPhotoPicker = false
     @State private var showingImageCropper = false
     @State private var imageToCrop: UIImage?
+    @State private var croppingItem: CroppableImage?
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newImage: UIImage?
@@ -142,29 +143,24 @@ struct ItemDetailView: View {
         }
         .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
         .fullScreenCover(isPresented: $showingCamera, onDismiss: {
-            // Small delay to ensure camera is fully dismissed on iOS 18 before showing cropper
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                if imageToCrop != nil {
-                    showingImageCropper = true
+            // Ensure camera is fully dismissed on iOS 18 before selecting the cropping item
+            if let image = imageToCrop {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    croppingItem = CroppableImage(image: image)
                 }
             }
         }) {
             CameraViewForEdit(image: $imageToCrop)
         }
         
-        // Separate anchor for cropper to avoid presentation conflicts on iOS 18
-        Color.clear
-            .frame(width: 1, height: 1)
-            .fullScreenCover(isPresented: $showingImageCropper) {
-                if let image = imageToCrop {
-                    CropView(image: image) { croppedImage in
-                        newImage = croppedImage
-                        showingImageCropper = false
-                    } onCancel: {
-                        showingImageCropper = false
-                    }
-                }
+        .fullScreenCover(item: $croppingItem) { item in
+            CropView(image: item.image) { croppedImage in
+                newImage = croppedImage
+                croppingItem = nil
+            } onCancel: {
+                croppingItem = nil
             }
+        }
 
         .onChange(of: selectedPhotoItem) { _, newValue in
             guard let item = newValue else { return }
@@ -189,8 +185,7 @@ struct ItemDetailView: View {
                 try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
                 
                 await MainActor.run {
-                    imageToCrop = downsampledImage
-                    showingImageCropper = true
+                    croppingItem = CroppableImage(image: downsampledImage)
                     selectedPhotoItem = nil
                     isProcessingImage = false
                 }

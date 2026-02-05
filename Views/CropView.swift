@@ -1,6 +1,11 @@
 import SwiftUI
 import UIKit
 
+struct CroppableImage: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
 struct CropView: View {
     let image: UIImage
     let onComplete: (UIImage) -> Void
@@ -44,6 +49,13 @@ struct CropView: View {
         NavigationStack {
             GeometryReader { geometry in
                 ZStack {
+                    // Loading state if frame isn't ready
+                    if imageFrame == .zero {
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(1.5)
+                    }
+                    
                     // Image layer (zoomable/pannable)
                     if imageFrame != .zero {
                         Image(uiImage: image)
@@ -80,31 +92,24 @@ struct CropView: View {
                     }
                     
                     // Crop overlay
-                    CropOverlay(
-                        cropRect: $cropRect,
-                        isDraggingCrop: $isDraggingCrop,
-                        cropDragStart: $cropDragStart,
-                        cropRectAtDragStart: $cropRectAtDragStart,
-                        imageFrame: visibleImageFrame,
-                        viewSize: geometry.size
-                    )
-                    
-
+                    if imageFrame != .zero {
+                        CropOverlay(
+                            cropRect: $cropRect,
+                            isDraggingCrop: $isDraggingCrop,
+                            cropDragStart: $cropDragStart,
+                            cropRectAtDragStart: $cropRectAtDragStart,
+                            imageFrame: visibleImageFrame,
+                            viewSize: geometry.size
+                        )
+                    }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
-                .background(Color.black.ignoresSafeArea()) // Move background here
-                .coordinateSpace(name: "CropContainer")
+                .background(Color.black.ignoresSafeArea())
                 .onChange(of: geometry.size) { _, newSize in
-                    if cropRect == .zero && newSize.width > 0 && newSize.height > 0 {
-                        imageFrame = calculateImageFrame(in: newSize)
-                        cropRect = calculateInitialCropRect(in: newSize)
-                    }
+                    setupFrame(in: newSize)
                 }
                 .onAppear {
-                    if geometry.size.width > 0 && geometry.size.height > 0 {
-                        imageFrame = calculateImageFrame(in: geometry.size)
-                        cropRect = calculateInitialCropRect(in: geometry.size)
-                    }
+                    setupFrame(in: geometry.size)
                 }
             }
             .navigationTitle("Crop Image")
@@ -128,19 +133,27 @@ struct CropView: View {
         
         var displaySize: CGSize
         if imageAspect > viewAspect {
-            // Image is wider than view (or fits width)
             displaySize = CGSize(width: viewSize.width, height: viewSize.width / imageAspect)
         } else {
-            // Image is taller than view
             displaySize = CGSize(width: viewSize.height * imageAspect, height: viewSize.height)
         }
         
-        // Center within the available view size
         let x = (viewSize.width - displaySize.width) / 2
         let y = (viewSize.height - displaySize.height) / 2
         
         return CGRect(x: x, y: y, width: displaySize.width, height: displaySize.height)
     }
+    
+    private func setupFrame(in viewSize: CGSize) {
+        guard viewSize.width > 50 && viewSize.height > 50 else { return }
+        
+        imageFrame = calculateImageFrame(in: viewSize)
+        
+        if cropRect == .zero {
+            cropRect = calculateInitialCropRect(in: viewSize)
+        }
+    }
+    
     
     private func calculateInitialCropRect(in viewSize: CGSize) -> CGRect {
         // Create a square crop frame, 70% of the smaller screen dimension
