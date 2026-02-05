@@ -8,39 +8,21 @@ struct CropView: View {
     let onComplete: (UIImage) -> Void
     let onCancel: () -> Void
     
-    @State private var imageScale: CGFloat = 1.0
-    @State private var imageOffset: CGSize = .zero
-    @State private var lastScale: CGFloat = 1.0
-    @State private var lastOffset: CGSize = .zero
-    
-    // Fixed square crop frame
+    // Crop frame state
     @State private var cropRect: CGRect = .zero
     @State private var imageFrame: CGRect = .zero
     
-    // Crop frame dragging
+    // Interaction state
     @State private var isDraggingCrop = false
     @State private var cropDragStart: CGPoint = .zero
-
     @State private var cropRectAtDragStart: CGRect = .zero
     
-    // Computed property for the actual visual frame including scale & offset
-    private var visibleImageFrame: CGRect {
-        guard imageFrame != .zero else { return .zero }
-        let size = CGSize(
-            width: imageFrame.width * imageScale,
-            height: imageFrame.height * imageScale
-        )
-        let center = CGPoint(
-            x: imageFrame.midX + imageOffset.width,
-            y: imageFrame.midY + imageOffset.height
-        )
-        return CGRect(
-            x: center.x - size.width / 2,
-            y: center.y - size.height / 2,
-            width: size.width,
-            height: size.height
-        )
-    }
+    @State private var isPinchingCrop = false
+    @State private var cropRectAtPinchStart: CGRect = .zero
+    
+    // Static image state (no more imageScale/imageOffset)
+    
+
     
     var body: some View {
         NavigationStack {
@@ -53,55 +35,42 @@ struct CropView: View {
                             .scaleEffect(1.5)
                     }
                     
-                    // Image layer (zoomable/pannable)
+                    // Image layer (Fixed background)
                     if imageFrame != .zero {
                         Image(uiImage: image)
                             .resizable()
+                            .aspectRatio(contentMode: .fit)
                             .frame(width: imageFrame.width, height: imageFrame.height)
                             .position(x: imageFrame.midX, y: imageFrame.midY)
-                            .scaleEffect(imageScale)
-                            .offset(imageOffset)
-                            .gesture(
-                                MagnificationGesture()
-                                    .onChanged { value in
-                                        imageScale = lastScale * value
-                                    }
-                                    .onEnded { _ in
-                                        lastScale = imageScale
-                                    }
-                            )
-                            .simultaneousGesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        if !isDraggingCrop {
-                                            imageOffset = CGSize(
-                                                width: lastOffset.width + value.translation.width,
-                                                height: lastOffset.height + value.translation.height
-                                            )
-                                        }
-                                    }
-                                    .onEnded { _ in
-                                        if !isDraggingCrop {
-                                            lastOffset = imageOffset
-                                        }
-                                    }
-                            )
                     }
                     
-                    // Crop overlay
+                    // Crop overlay with interative box
                     if imageFrame != .zero {
                         CropOverlay(
                             cropRect: $cropRect,
                             isDraggingCrop: $isDraggingCrop,
                             cropDragStart: $cropDragStart,
                             cropRectAtDragStart: $cropRectAtDragStart,
-                            imageFrame: visibleImageFrame,
+                            imageFrame: imageFrame,
                             viewSize: geometry.size
                         )
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .background(Color.black.ignoresSafeArea())
+                .gesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            if !isPinchingCrop {
+                                isPinchingCrop = true
+                                cropRectAtPinchStart = cropRect
+                            }
+                            updateCropScale(value)
+                        }
+                        .onEnded { _ in
+                            isPinchingCrop = false
+                        }
+                )
                 .onChange(of: geometry.size) { _, newSize in
                     setupFrame(in: newSize)
                 }
@@ -147,18 +116,47 @@ struct CropView: View {
         imageFrame = calculateImageFrame(in: viewSize)
         
         if cropRect == .zero {
-            cropRect = calculateInitialCropRect(in: viewSize)
+            // Start crop window as the entire image
+            cropRect = imageFrame
         }
     }
     
-    
-    private func calculateInitialCropRect(in viewSize: CGSize) -> CGRect {
-        // Create a square crop frame, 70% of the smaller screen dimension
-        let size = min(viewSize.width, viewSize.height) * 0.7
-        let x = (viewSize.width - size) / 2
-        let y = (viewSize.height - size) / 2
+    private func updateCropScale(_ scale: CGFloat) {
+        let startRect = cropRectAtPinchStart
+        var newWidth = startRect.width * scale
+        var newHeight = startRect.height * scale
         
-        return CGRect(x: x, y: y, width: size, height: size)
+        // Maintain the aspect ratio of the initial image/crop choice
+        let ratio = startRect.width / startRect.height
+        
+        // Maximum constraints (image bounds)
+        if newWidth > imageFrame.width {
+            newWidth = imageFrame.width
+            newHeight = newWidth / ratio
+        }
+        if newHeight > imageFrame.height {
+            newHeight = imageFrame.height
+            newWidth = newHeight * ratio
+        }
+        
+        // Minimum constraints
+        if newWidth < 80 || newHeight < 80 {
+            newWidth = max(newWidth, 80)
+            newHeight = newWidth / ratio
+        }
+        
+        // Calculate new origin to keep it centered during pinch
+        let oldCenter = CGPoint(x: startRect.midX, y: startRect.midY)
+        var newX = oldCenter.x - newWidth / 2
+        var newY = oldCenter.y - newHeight / 2
+        
+        // Clamping to stay inside imageFrame
+        if newX < imageFrame.minX { newX = imageFrame.minX }
+        if newY < imageFrame.minY { newY = imageFrame.minY }
+        if newX + newWidth > imageFrame.maxX { newX = imageFrame.maxX - newWidth }
+        if newY + newHeight > imageFrame.maxY { newY = imageFrame.maxY - newHeight }
+        
+        cropRect = CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
     }
     
     private func handleDone() {
@@ -167,59 +165,25 @@ struct CropView: View {
     }
     
     private func cropImage() -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: cropRect.width, height: cropRect.height))
+        let imageSize = image.size
         
-        return renderer.image { context in
-            let imageSize = image.size
-            let screenSize = UIScreen.main.bounds.size
-            let imageAspect = imageSize.width / imageSize.height
-            let screenAspect = screenSize.width / screenSize.height
-            
-            var displaySize: CGSize
-            if imageAspect > screenAspect {
-                displaySize = CGSize(width: screenSize.width, height: screenSize.width / imageAspect)
-            } else {
-                displaySize = CGSize(width: screenSize.height * imageAspect, height: screenSize.height)
-            }
-            
-            displaySize = CGSize(
-                width: displaySize.width * imageScale,
-                height: displaySize.height * imageScale
-            )
-            
-            let imageCenter = CGPoint(
-                x: screenSize.width / 2 + imageOffset.width,
-                y: screenSize.height / 2 + imageOffset.height
-            )
-            
-            let currentImageFrame = CGRect(
-                x: imageCenter.x - displaySize.width / 2,
-                y: imageCenter.y - displaySize.height / 2,
-                width: displaySize.width,
-                height: displaySize.height
-            )
-            
-            let relativeRect = CGRect(
-                x: (cropRect.minX - currentImageFrame.minX) / displaySize.width,
-                y: (cropRect.minY - currentImageFrame.minY) / displaySize.height,
-                width: cropRect.width / displaySize.width,
-                height: cropRect.height / displaySize.height
-            )
-            
-            let cropInImageCoords = CGRect(
-                x: relativeRect.minX * imageSize.width,
-                y: relativeRect.minY * imageSize.height,
-                width: relativeRect.width * imageSize.width,
-                height: relativeRect.height * imageSize.height
-            )
-            
-            if let cgImage = image.cgImage?.cropping(to: cropInImageCoords) {
-                let croppedImage = UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
-                croppedImage.draw(in: CGRect(origin: .zero, size: cropRect.size))
-            } else {
-                image.draw(in: CGRect(origin: .zero, size: cropRect.size))
-            }
+        // Calculate coordinates relative to the imageFrame (where the image is actually drawn)
+        let relativeX = (cropRect.minX - imageFrame.minX) / imageFrame.width
+        let relativeY = (cropRect.minY - imageFrame.minY) / imageFrame.height
+        let relativeW = cropRect.width / imageFrame.width
+        let relativeH = cropRect.height / imageFrame.height
+        
+        let cropInImageCoords = CGRect(
+            x: relativeX * imageSize.width,
+            y: relativeY * imageSize.height,
+            width: relativeW * imageSize.width,
+            height: relativeH * imageSize.height
+        )
+        
+        if let cgImage = image.cgImage?.cropping(to: cropInImageCoords) {
+            return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
         }
+        return image
     }
 }
 
@@ -247,12 +211,16 @@ struct CropOverlay: View {
                         )
                 )
             
-            // Crop rectangle border (white, clean)
+            // Crop rectangle area (Interactive)
             Rectangle()
-                .stroke(Color.white, lineWidth: 2)
+                .fill(Color.white.opacity(0.001)) // Transparent but interactive
+                .overlay(
+                    Rectangle()
+                        .stroke(Color.white, lineWidth: 2)
+                        .shadow(color: .black.opacity(0.5), radius: 2)
+                )
                 .frame(width: cropRect.width, height: cropRect.height)
                 .position(x: cropRect.midX, y: cropRect.midY)
-                .contentShape(Rectangle())
                 .gesture(
                     DragGesture()
                         .onChanged { value in
