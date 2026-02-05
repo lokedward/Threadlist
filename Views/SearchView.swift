@@ -215,7 +215,6 @@ struct AnyLinearGradient: ShapeStyle {
         LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
     }
 }
-}
 
 #Preview {
     NavigationStack {
