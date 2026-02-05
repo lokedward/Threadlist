@@ -95,26 +95,33 @@ struct AddItemView: View {
     
     private var formContent: some View {
         VStack(spacing: 24) {
-            // Mode Toggle
-            Picker("Mode", selection: $additionMode) {
-                ForEach(AdditionMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 40)
-            .onChange(of: additionMode) {
-                resetFields()
-            }
-            
-            if additionMode == .multiple && bulkImageQueue.isEmpty {
-                bulkEmptyState
-            } else {
-                activeFormContent
-            }
+            modeToggle
+            modeSpecificContent
         }
         .padding(20)
         .padding(.bottom, 40)
+    }
+    
+    private var modeToggle: some View {
+        Picker("Mode", selection: $additionMode) {
+            ForEach(AdditionMode.allCases, id: \.self) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 40)
+        .onChange(of: additionMode) {
+            resetFields()
+        }
+    }
+    
+    @ViewBuilder
+    private var modeSpecificContent: some View {
+        if additionMode == .multiple && bulkImageQueue.isEmpty {
+            bulkEmptyState
+        } else {
+            activeFormContent
+        }
     }
     
     private var bulkEmptyState: some View {
@@ -142,22 +149,23 @@ struct AddItemView: View {
     
     private var activeFormContent: some View {
         VStack(spacing: 24) {
-            // Image Section
             imageSection
             
             if additionMode == .multiple {
-                Text("ITEM \(totalBulkItems - bulkImageQueue.count + 1) OF \(totalBulkItems)")
+                Text(bulkProgressLabel)
                     .font(.system(size: 10, weight: .bold))
                     .tracking(2)
                     .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
             }
             
-            // Details Section
             detailsSection
-            
-            // Action Button
             actionButton
         }
+    }
+    
+    private var bulkProgressLabel: String {
+        let currentItemIndex = totalBulkItems - bulkImageQueue.count + 1
+        return "ITEM \(currentItemIndex) OF \(totalBulkItems)"
     }
     
     // MARK: - Subviews
@@ -278,7 +286,8 @@ struct AddItemView: View {
                 if isSaving {
                     ProgressView().tint(.white)
                 } else {
-                    actionButtonText.tracking(2)
+                    Text(actionButtonLabel)
+                        .tracking(2)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -289,11 +298,11 @@ struct AddItemView: View {
         .padding(.top, 8)
     }
     
-    private var actionButtonText: Text {
+    private var actionButtonLabel: String {
         if additionMode == .single {
-            return Text("SAVE TO CLOSET")
+            return "SAVE TO CLOSET"
         } else {
-            return Text(bulkImageQueue.count > 1 ? "SAVE & NEXT" : "SAVE & FINISH")
+            return bulkImageQueue.count > 1 ? "SAVE & NEXT" : "SAVE & FINISH"
         }
     }
     
