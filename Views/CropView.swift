@@ -39,7 +39,6 @@ struct CropView: View {
                     if imageFrame != .zero {
                         Image(uiImage: image)
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
                             .frame(width: imageFrame.width, height: imageFrame.height)
                             .position(x: imageFrame.midX, y: imageFrame.midY)
                     }
@@ -104,21 +103,51 @@ struct CropView: View {
             displaySize = CGSize(width: viewSize.height * imageAspect, height: viewSize.height)
         }
         
-        let x = (viewSize.width - displaySize.width) / 2
-        let y = (viewSize.height - displaySize.height) / 2
+        // Round to nearest pixel to avoid sub-pixel gaps and boundary inconsistencies
+        let x = floor((viewSize.width - displaySize.width) / 2)
+        let y = floor((viewSize.height - displaySize.height) / 2)
         
-        return CGRect(x: x, y: y, width: displaySize.width, height: displaySize.height)
+        return CGRect(
+            x: x,
+            y: y,
+            width: floor(displaySize.width),
+            height: floor(displaySize.height)
+        )
     }
     
     private func setupFrame(in viewSize: CGSize) {
         guard viewSize.width > 50 && viewSize.height > 50 else { return }
         
+        let oldImageFrame = imageFrame
         imageFrame = calculateImageFrame(in: viewSize)
         
-        if cropRect == .zero {
-            // Start crop window as the entire image
+        // If cropRect is not yet set, or if it was perfectly matching the old image frame (starting state)
+        // then we update it to the new image frame to stay in sync during orientation/size changes.
+        if cropRect == .zero || (
+            abs(cropRect.width - oldImageFrame.width) < 1.0 && 
+            abs(cropRect.height - oldImageFrame.height) < 1.0
+        ) {
             cropRect = imageFrame
+        } else {
+            // If the user has already started manipulating the box, just clamp it to the new bounds
+            clampCropRect()
         }
+    }
+    
+    private func clampCropRect() {
+        var newRect = cropRect
+        
+        // Clamp size
+        newRect.size.width = min(newRect.width, imageFrame.width)
+        newRect.size.height = min(newRect.height, imageFrame.height)
+        
+        // Clamp position
+        if newRect.minX < imageFrame.minX { newRect.origin.x = imageFrame.minX }
+        if newRect.minY < imageFrame.minY { newRect.origin.y = imageFrame.minY }
+        if newRect.maxX > imageFrame.maxX { newRect.origin.x = imageFrame.maxX - newRect.width }
+        if newRect.maxY > imageFrame.maxY { newRect.origin.y = imageFrame.maxY - newRect.height }
+        
+        cropRect = newRect
     }
     
     private func updateCropScale(_ scale: CGFloat) {
