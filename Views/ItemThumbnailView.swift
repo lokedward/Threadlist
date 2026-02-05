@@ -57,8 +57,18 @@ struct ItemThumbnailView: View {
                 }
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(PoshTheme.Colors.cardBackground.opacity(0.5))
-                .background(.ultraThinMaterial)
+                .background(.thinMaterial)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            .black.opacity(0.15),
+                            .clear
+                        ],
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+                )
+                .background(PoshTheme.Colors.cardBackground.opacity(0.15))
             }
         }
         .frame(width: size == .small ? size.dimension : nil)
