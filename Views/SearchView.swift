@@ -178,6 +178,10 @@ struct SearchView: View {
                     }
                     .padding()
                 }
+                .refreshable {
+                    // Simulate a refresh delay
+                    try? await Task.sleep(nanoseconds: 800_000_000)
+                }
             }
         }
         .navigationTitle("Search")

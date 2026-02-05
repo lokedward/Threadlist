@@ -30,6 +30,11 @@ struct HomeView: View {
                     }
                     .padding(.vertical)
                 }
+                .refreshable {
+                    // Simulate a refresh delay to show the spinning animation
+                    // In a production app with a backend, this would trigger a data sync
+                    try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
+                }
             }
             
             // Floating Action Button
