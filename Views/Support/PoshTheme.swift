@@ -14,12 +14,12 @@ struct PoshTheme {
         static let cardBackground = Color(light: .white, 
                                          dark: Color(red: 0.12, green: 0.12, blue: 0.12))
         
-        // Accents - Primary (Gold/Cream)
-        static let primaryAccentStart = Color(light: Color(red: 0.90, green: 0.82, blue: 0.45), // Gold
-                                            dark: Color(red: 0.95, green: 0.85, blue: 0.55)) 
+        // Accents - Primary (Champagne in Light, Bronze in Dark)
+        static let primaryAccentStart = Color(light: Color(red: 0.83, green: 0.68, blue: 0.21), // Champagne
+                                            dark: Color(red: 0.80, green: 0.50, blue: 0.20)) // Bronze
         
-        static let primaryAccentEnd = Color(light: Color(red: 1.00, green: 0.98, blue: 0.85), // Cream
-                                          dark: Color(red: 0.85, green: 0.70, blue: 0.35))
+        static let primaryAccentEnd = Color(light: Color(red: 0.91, green: 0.82, blue: 0.48), 
+                                          dark: Color(red: 0.55, green: 0.27, blue: 0.07))
         
         static var primaryGradient: LinearGradient {
             LinearGradient(colors: [primaryAccentStart, primaryAccentEnd], 
@@ -43,8 +43,8 @@ struct PoshTheme {
             Color.black.opacity(0.08)
         }
         
-        static var goldGlow: Color {
-            Color(red: 0.95, green: 0.85, blue: 0.55).opacity(0.3)
+        static var bronzeGlow: Color {
+            Color(red: 0.80, green: 0.50, blue: 0.20).opacity(0.3)
         }
     }
     
@@ -71,7 +71,7 @@ struct PoshCardModifier: ViewModifier {
             .background(PoshTheme.Colors.cardBackground)
             .cornerRadius(16)
             .shadow(
-                color: colorScheme == .light ? PoshTheme.Colors.cardShadow : PoshTheme.Colors.goldGlow,
+                color: colorScheme == .light ? PoshTheme.Colors.cardShadow : PoshTheme.Colors.bronzeGlow,
                 radius: colorScheme == .light ? 10 : 15,
                 x: 0,
                 y: 5

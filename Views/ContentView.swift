@@ -33,12 +33,22 @@ struct ContentView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink {
-                        SearchView()
-                    } label: {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 18, weight: .light))
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                    HStack(spacing: 16) {
+                        NavigationLink {
+                            StylistView()
+                        } label: {
+                            Image(systemName: "hanger")
+                                .font(.system(size: 18, weight: .light))
+                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                        }
+                        
+                        NavigationLink {
+                            SearchView()
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 18, weight: .light))
+                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                        }
                     }
                 }
             }

@@ -40,7 +40,26 @@ struct ItemThumbnailView: View {
                 }
                 .clipped()
             
-
+            // Info Overlay
+            VStack {
+                Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    if let brand = item.brand, !brand.isEmpty {
+                        Text(brand.uppercased())
+                            .font(.system(size: 8, weight: .bold))
+                            .tracking(1)
+                            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                    }
+                    
+                    Text(item.name)
+                        .poshHeadline(size: 13)
+                        .lineLimit(1)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(PoshTheme.Colors.cardBackground.opacity(0.85))
+                .background(.ultraThinMaterial)
+            }
         }
         .frame(width: size == .small ? size.dimension : nil)
         .poshCard()
