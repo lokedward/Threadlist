@@ -49,6 +49,7 @@ struct ItemThumbnailView: View {
                             .font(.system(size: 8, weight: .bold))
                             .tracking(1)
                             .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                            .lineLimit(1)
                     }
                     
                     Text(item.name)
@@ -60,6 +61,7 @@ struct ItemThumbnailView: View {
                 .background(PoshTheme.Colors.cardBackground.opacity(0.85))
                 .background(.ultraThinMaterial)
             }
+            .clipped()
         }
         .frame(width: size == .small ? size.dimension : nil)
         .poshCard()

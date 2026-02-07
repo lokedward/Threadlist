@@ -30,11 +30,23 @@ struct StylistView: View {
                 
                 // Bottom Selection Drawer/Grid
                 VStack(spacing: 0) {
+                    Divider()
+                        .background(PoshTheme.Colors.secondaryAccent.opacity(0.3))
+                    
+                    
                     HStack {
-                        Text("YOUR CLOSET")
-                            .font(.system(size: 10, weight: .bold))
-                            .tracking(2)
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
+                        HStack(spacing: 6) {
+                            Text("YOUR CLOSET")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(2)
+                                .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
+                            
+                            if !selectedItems.isEmpty {
+                                Text("(\(selectedItems.count))")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                            }
+                        }
                         
                         Spacer()
                         
@@ -56,7 +68,7 @@ struct StylistView: View {
                             selectedItems: $selectedItems
                         )
                         .transition(.move(edge: .bottom))
-                        .frame(height: 300)
+                        .frame(maxHeight: 350)
                     }
                 }
                 .background(.ultraThinMaterial)

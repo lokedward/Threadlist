@@ -8,12 +8,14 @@ struct ItemSelectionGridView: View {
     @Binding var selectedItems: Set<UUID>
     
     let columns = [
-        GridItem(.adaptive(minimum: 100), spacing: 12)
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
     ]
     
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(items) { item in
                     SelectableItemThumbnail(
                         item: item,
@@ -51,11 +53,17 @@ struct SelectableItemThumbnail: View {
                             .stroke(PoshTheme.Colors.primaryAccentStart, lineWidth: isSelected ? 3 : 0)
                     )
                 
+                
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
                         .foregroundColor(PoshTheme.Colors.primaryAccentStart)
-                        .background(Circle().fill(.white))
-                        .offset(x: 4, y: -4)
+                        .background(
+                            Circle()
+                                .fill(.white)
+                                .padding(2)
+                        )
+                        .padding(6)
                 }
             }
         }
