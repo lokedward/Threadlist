@@ -134,12 +134,7 @@ extension Color {
 
 struct PoshHeader: View {
     let title: String
-    let showTitle: Bool
-    
-    init(title: String, showTitle: Bool = true) {
-        self.title = title
-        self.showTitle = showTitle
-    }
+    var showTitle: Bool = true
     
     var body: some View {
         HStack(spacing: 8) {
