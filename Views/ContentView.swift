@@ -19,7 +19,7 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    PoshHeader(title: "ThreadList")
+                    PoshHeader(title: "ThreadList", showTitle: false)
                 }
                 
                 ToolbarItem(placement: .navigationBarLeading) {
