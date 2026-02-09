@@ -59,6 +59,7 @@ struct ContentView: View {
         .sheet(isPresented: $showingAddItem) {
             AddItemView()
         }
+        .preferredColorScheme(.light)
     }
 }
 
