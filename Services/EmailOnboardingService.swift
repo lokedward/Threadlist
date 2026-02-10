@@ -794,9 +794,10 @@ class GenericEmailParser: EmailParser {
     func extractProducts(from email: GmailMessage) async throws -> [ProductData] {
         guard let rawHtml = email.htmlBody else { return [] }
         
-        // 1. Strip Forwarded Headers (Keep this)
+        // 1. Strip Forwarded Headers (Robust)
         var processingHtml = rawHtml
-        let forwardMarkers = ["Begin forwarded message", "Forwarded message", "---------- Original Message"]
+        // Match standard Gmail/Outlook forward markers
+        let forwardMarkers = ["Begin forwarded message", "Forwarded message", "---------- Original Message ----------"]
         for marker in forwardMarkers {
             if let range = processingHtml.range(of: marker, options: .caseInsensitive) {
                 processingHtml = String(processingHtml[range.upperBound...])
@@ -804,26 +805,26 @@ class GenericEmailParser: EmailParser {
             }
         }
 
-        // 2. "Gold Zone" Logic with Fallback
-        // Define markers
-        let startMarkers = ["Order Summary", "Order #", "Order Number", "Your Order", "Item Details", "Shipment Details"]
-        let endMarkers = ["Subtotal", "Order Total", "Tax", "Shipping"]
+        // 2. The "Gold Zone" Crop (Safe Buffer)
+        // Locate the "Order" section to avoid picking up the top-level logo
+        let startMarkers = ["Order Summary", "Order #", "Order Number", "Your Order", "Item Details"]
+        let endMarkers = ["Subtotal", "Order Total", "Total Payment", "Tax", "Shipping"]
         
-        // Attempt Crop
-        var croppedHtml = processingHtml
         var startIndex = processingHtml.startIndex
         var endIndex = processingHtml.endIndex
         
+        // Find Start (Earliest occurrence)
         for marker in startMarkers {
             if let range = processingHtml.range(of: marker, options: .caseInsensitive) {
+                // Found a marker? Back up 1500 chars to catch any images slightly above the text
                 if range.lowerBound < startIndex || startIndex == processingHtml.startIndex {
-                    // Back up 2000 chars to be safe
-                    startIndex = processingHtml.index(range.lowerBound, offsetBy: -2000, limitedBy: processingHtml.startIndex) ?? processingHtml.startIndex
+                    startIndex = processingHtml.index(range.lowerBound, offsetBy: -1500, limitedBy: processingHtml.startIndex) ?? processingHtml.startIndex
                     break
                 }
             }
         }
         
+        // Find End (Last occurrence)
         for marker in endMarkers {
             if let range = processingHtml.range(of: marker, options: [.caseInsensitive, .backwards]) {
                 endIndex = range.upperBound
@@ -831,78 +832,109 @@ class GenericEmailParser: EmailParser {
             }
         }
         
-        if startIndex < endIndex {
-            croppedHtml = String(processingHtml[startIndex..<endIndex])
-        }
+        let html = String(processingHtml[startIndex..<endIndex])
         
-        // Helper to run extraction on a specific HTML string
-        func runExtraction(on htmlString: String) -> [ProductData] {
-            var localCandidates: [ProductData] = []
-            let imgTagPattern = #"<img\s+([^>]+)>"#
-            let regex = try? NSRegularExpression(pattern: imgTagPattern, options: .caseInsensitive)
-            let matches = regex?.matches(in: htmlString, range: NSRange(htmlString.startIndex..., in: htmlString)) ?? []
-            
-            var seenURLs = Set<URL>()
-            
-            for match in matches {
-                guard match.numberOfRanges >= 2,
-                      let tagRange = Range(match.range(at: 1), in: htmlString) else { continue }
+        var candidates: [ProductData] = []
+        
+        // Strategy: Find all images tags and parse attributes
+        let imgTagPattern = #"<img\s+([^>]+)>"#
+        let regex = try NSRegularExpression(pattern: imgTagPattern, options: .caseInsensitive)
+        let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+        
+        var seenURLs = Set<URL>()
+        
+        for match in matches {
+            if match.numberOfRanges >= 2,
+               let tagRange = Range(match.range(at: 1), in: html) {
                 
-                let tagContent = String(htmlString[tagRange])
+                let tagContent = String(html[tagRange])
                 
                 guard let imageURLString = extractAttribute("src", from: tagContent),
                       let imageURL = URL(string: imageURLString) else { continue }
                 
-                // FIX: Use .parsedInt to handle "177px"
-                let width = extractAttribute("width", from: tagContent)?.parsedInt
-                let height = extractAttribute("height", from: tagContent)?.parsedInt
                 let altText = extractAttribute("alt", from: tagContent) ?? ""
+                let width = Int(extractAttribute("width", from: tagContent) ?? "0")
+                let height = Int(extractAttribute("height", from: tagContent) ?? "0")
                 
-                if seenURLs.contains(imageURL) { continue }
+                // Deduplicate by URL immediately
+                guard !seenURLs.contains(imageURL) else { continue }
                 
-                // Check Detector
-                guard ClothingDetector.isLikelyProductImage(url: imageURLString, alt: altText, width: width, height: height) else { continue }
+                // 1. Structural Filter: Image Validation
+                // Must be likely product image (dimension check)
+                guard ClothingDetector.isLikelyProductImage(url: imageURLString, alt: altText, width: width == 0 ? nil : width, height: height == 0 ? nil : height) else {
+                    continue
+                }
                 
+                // Clean Name
                 let productName = cleanProductName(altText)
+                guard !productName.isEmpty else { continue }
                 
-                // Scoring Logic
+                // 2. Score Calculation
                 var score = 0
-                // Range range for context: +/- 500 chars (using extractNearbyText from class if accessible, else naive)
-                // Since this is a nested func, we can call self.extractNearbyText if we capture self. Or just make it a method.
-                // But extractNearbyText is private.
-                // We'll rely on the class method.
-                let context = extractNearbyText(from: htmlString, around: tagRange) // Expecting this to exist on class
                 
-                if hasPricePattern(context) { score += 20 }
-                if ClothingDetector.isClothingItem(productName) { score += 50 }
-                if ClothingDetector.isBrandName(productName) { score += 40 }
+                // Base structure requirement: Image + Price nearby
+                // Check context (+/- 500 chars) for price
+                let context = extractNearbyText(from: html, around: tagRange)
+                let hasPrice = hasPricePattern(context)
                 
-                // Allow items with just Price + Good Aspect Ratio even if name is weak
-                if score >= 20 {
+                // STRICT RULE: If unknown brand AND no clothing keyword, MUST have price
+                // Actually, user said "Price anchored block".
+                // We'll give points for price.
+                
+                if hasPrice {
+                    score += 10 // Baseline for valid structure
+                }
+                
+                // Keyword matches
+                if ClothingDetector.isClothingItem(productName) {
+                    score += 50
+                } else if ClothingDetector.isBlacklisted(productName) {
+                    score -= 100
+                }
+                
+                // Brand match
+                if ClothingDetector.isBrandName(productName) {
+                    score += 50
+                }
+                
+                // Size/Qty clues in context (heuristic)
+                if context.localizedCaseInsensitiveContains("Qty") || context.localizedCaseInsensitiveContains("Quantity") {
+                    score += 20
+                }
+                
+                // Check context for negative signals
+                if context.localizedCaseInsensitiveContains("Shipping") || context.localizedCaseInsensitiveContains("Subtotal") {
+                    // Only penalize if very close? Or if it's the KEY content?
+                    // E.g. "Shipping $5.00" might look like a product.
+                    // If name is "Shipping", isBlacklisted handles it.
+                    // If context has "Shipping", it might be an item list header. Ignored.
+                }
+
+                // Filtering Decision
+                // We keep items if they are:
+                // A) High confidence (Keyword/Brand match) -> Score > 50
+                // B) Structural match (Price + Image) -> Score >= 10
+                // We DROP items if Score <= 0 (e.g. Image only, no price, no keywords)
+                
+                if score > 0 {
                     seenURLs.insert(imageURL)
-                    localCandidates.append(ProductData(
-                        name: productName.isEmpty ? "Item" : productName, // Fallback name
+                    candidates.append(ProductData(
+                        name: productName,
                         imageURL: imageURL,
-                        price: extractPrice(from: context),
-                        brand: nil, size: nil, color: nil, category: nil, tags: [],
+                        price: extractPrice(from: context), // Extract actual string if possible
+                        brand: nil,
+                        size: nil,
+                        color: nil,
+                        category: nil,
+                        tags: [],
                         score: score
                     ))
                 }
             }
-            return localCandidates
         }
         
-        // 3. Execution Strategy
-        // Try Cropped HTML first
-        var results = runExtraction(on: croppedHtml)
-        
-        // If NO results found in crop, fall back to Full HTML (Fixes the regression)
-        if results.isEmpty {
-            print("⚠️ Gold Zone yielded 0 items. Falling back to full HTML.")
-            results = runExtraction(on: processingHtml)
-        }
-        
-        return results.sorted { $0.score > $1.score }
+        // Sort descending by score
+        return candidates.sorted { $0.score > $1.score }
     }
     
     // MARK: - Gold Zone Cropping
@@ -1234,77 +1266,77 @@ class LululemonEmailParser: EmailParser {
         guard let html = email.htmlBody else { return [] }
         var products: [ProductData] = []
         
-        // 1. Find all 150px images (Lululemon standard)
-        // Matches width="150" or width: 150px style
-        let imgPattern = #"<img[^>]+width=["']?150["']?[^>]*>"#
-        let regex = try NSRegularExpression(pattern: imgPattern, options: .caseInsensitive)
-        let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+        // Strategy: Lululemon images are consistently width="150"
+        // The name appears in an <a> tag shortly after the image
         
-        var seenURLs = Set<URL>()
-        
-        for match in matches {
-            guard let imgRange = Range(match.range(at: 0), in: html) else { continue }
-            let imgTag = String(html[imgRange])
+        // Regex to find image tag with width=150
+        let imgPattern = #"(<img[^>]+width=["']?150["']?[^>]*>)"#
+        if let regex = try? NSRegularExpression(pattern: imgPattern, options: .caseInsensitive) {
+            let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
             
-            // Extract SRC
-            guard let srcMatch = imgTag.range(of: #"src=["']([^"']+)["']"#, options: .regularExpression),
-                  let urlRange = Range(srcMatch, in: imgTag) else { continue }
+            var seenURLs = Set<URL>()
             
-            // Clean URL
-            let rawUrl = String(imgTag[urlRange])
-            // Trim quotes safely
-            let urlString = rawUrl.split(whereSeparator: { $0 == "\"" || $0 == "'" }).last.map(String.init) ?? ""
-            
-            guard let imageURL = URL(string: urlString), !seenURLs.contains(imageURL) else { continue }
-            
-            // 2. Find Product Name
-            // Search the *next* 1500 characters for an anchor tag with text
-            let searchStart = imgRange.upperBound
-            let searchEnd = html.index(searchStart, offsetBy: 1500, limitedBy: html.endIndex) ?? html.endIndex
-            let searchRegion = String(html[searchStart..<searchEnd])
-            
-            // Look for <a ...>Product Name</a>
-            // Reject "Edit", "Remove", "View Details"
-            if let linkRegex = try? NSRegularExpression(pattern: #"<a[^>]*>([^<]+)</a>"#, options: .caseInsensitive) {
-                let linkMatches = linkRegex.matches(in: searchRegion, range: NSRange(searchRegion.startIndex..., in: searchRegion))
+            for match in matches {
+                guard let matchRange = Range(match.range(at: 1), in: html) else { continue }
+                let imgTag = String(html[matchRange])
                 
-                for linkMatch in linkMatches {
-                    if let textRange = Range(linkMatch.range(at: 1), in: searchRegion) {
-                        let text = String(searchRegion[textRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+                // 1. Extract URL
+                guard let srcRange = imgTag.range(of: #"src=["']([^"']+)["']"#, options: .regularExpression) else { continue }
+                let srcAttr = String(imgTag[srcRange])
+                
+                // Split by quote to get URL
+                let splits = srcAttr.split(whereSeparator: { $0 == "\"" || $0 == "'" })
+                guard splits.count > 1 else { continue }
+                let urlString = String(splits[1])
+                
+                guard let imageURL = URL(string: urlString) else { continue }
+                if seenURLs.contains(imageURL) { continue }
+                
+                // 2. Look Forward for Name (inside <a> tag)
+                // Scan next 1000 chars for the first anchor tag content
+                let searchRegionStart = matchRange.upperBound
+                let searchRegionEnd = html.index(searchRegionStart, offsetBy: 1000, limitedBy: html.endIndex) ?? html.endIndex
+                
+                if searchRegionStart < searchRegionEnd {
+                    let searchRegion = String(html[searchRegionStart..<searchRegionEnd])
+                    
+                    // Regex for Link Text: <a ...>(Name)</a>
+                    // We want to capture the content inside >...<
+                    if let nameRegex = try? NSRegularExpression(pattern: #"<a[^>]*>([^<]+)</a>"#, options: .caseInsensitive),
+                       let nameMatch = nameRegex.firstMatch(in: searchRegion, range: NSRange(searchRegion.startIndex..., in: searchRegion)),
+                       nameMatch.numberOfRanges >= 2,
+                       let nameRange = Range(nameMatch.range(at: 1), in: searchRegion) {
                         
-                        // Validation Filter
-                        if !text.isEmpty && 
-                           ClothingDetector.isClothingItem(text) && 
-                           !ClothingDetector.isBlacklisted(text) {
+                        let productName = String(searchRegion[nameRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+                        
+                        // 3. Validation
+                        // Lululemon product names are usually clean.
+                        // We filter for clothing items.
+                        if !productName.isEmpty, ClothingDetector.isClothingItem(productName) {
                             
                             seenURLs.insert(imageURL)
                             products.append(ProductData(
-                                name: text,
+                                name: productName,
                                 imageURL: imageURL,
-                                price: nil,
+                                price: nil, // Price is further down, skipping for MVP
                                 brand: "Lululemon",
-                                size: nil, color: nil, category: nil, tags: ["lululemon"],
-                                score: 90
+                                size: nil,
+                                color: nil,
+                                category: nil,
+                                tags: ["lululemon"],
+                                score: 95 // High confidence
                             ))
-                            break // Found the name for this image, stop searching links
                         }
                     }
                 }
             }
         }
         
-        // Fallback: If Lululemon parser fails, try Generic (but with full HTML)
+        // Fallback
         if products.isEmpty {
             return try await GenericEmailParser().extractProducts(from: email)
         }
         
         return products
-    }
-}
-
-private extension String {
-    var parsedInt: Int? {
-        let digits = self.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-        return Int(digits)
     }
 }
