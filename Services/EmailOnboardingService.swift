@@ -591,6 +591,11 @@ class GenericEmailParser: EmailParser {
                 
                 guard !productName.isEmpty else { continue }
                 
+                // ✨ NEW: Filter to clothing items only
+                guard isClothingItem(productName) else {
+                    continue
+                }
+                
                 products.append(ProductData(
                     name: productName,
                     imageURL: imageURL,
@@ -624,6 +629,124 @@ class GenericEmailParser: EmailParser {
         
         return cleaned
     }
+    
+    // MARK: - Clothing Detection
+    
+    private let clothingKeywords: Set<String> = [
+        // Tops
+        "shirt", "t-shirt", "tshirt", "tee", "polo", "blouse", "top", "tank", "camisole", "halter",
+        "sweater", "pullover", "tunic", "henley", "jersey", "cardigan", "vest", "waistcoat",
+        
+        // Activewear Tops
+        "hoodie", "sweatshirt", "tracksuit", "windbreaker", "fleece", "athletic top",
+        
+        // Bottoms
+        "pants", "jeans", "trousers", "slacks", "chinos", "khakis", "joggers",
+        "shorts", "skirt", "leggings", "tights", "capris", "culottes",
+        
+        // Dresses & Jumpsuits
+        "dress", "gown", "sundress", "maxi", "midi", "mini dress", "cocktail dress",
+        "jumpsuit", "romper", "playsuit", "overall", "dungaree",
+        
+        // Outerwear
+        "jacket", "coat", "blazer", "parka", "puffer", "bomber", "trench",
+        "raincoat", "peacoat", "overcoat", "anorak", "gilet", "poncho", "cape",
+        
+        // Suits & Formal
+        "suit", "tuxedo", "tux", "suit jacket", "suit pants", "dress pants",
+        "dress shirt", "bow tie", "cummerbund",
+        
+        // Shoes
+        "shoes", "sneakers", "trainers", "boots", "sandals", "heels", "pumps",
+        "loafers", "oxfords", "brogues", "flats", "slides", "flip-flops",
+        "slippers", "clogs", "mules", "espadrilles", "wedges", "platforms",
+        "ankle boots", "knee boots", "chelsea boots", "combat boots",
+        
+        // Activewear & Sports
+        "athletic", "workout", "gym", "running", "yoga pants", "sports bra",
+        "compression", "base layer", "performance", "moisture-wicking",
+        
+        // Intimates & Loungewear
+        "underwear", "boxers", "briefs", "bra", "lingerie", "sleepwear",
+        "pajamas", "pyjamas", "nightgown", "robe", "bathrobe", "loungewear",
+        
+        // Accessories
+        "hat", "cap", "beanie", "fedora", "baseball cap", "snapback",
+        "scarf", "belt", "tie", "necktie", "gloves", "mittens",
+        "socks", "stockings", "hosiery", "bag", "purse", "wallet",
+        "watch", "sunglasses", "eyewear", "jewelry", "bracelet", "necklace",
+        
+        // Materials & Descriptors (strong indicators)
+        "denim", "leather", "suede", "cashmere", "wool", "cotton",
+        "silk", "velvet", "linen", "chambray", "corduroy"
+    ]
+    
+    private let clothingBrands: Set<String> = [
+        // Athletic
+        "nike", "adidas", "puma", "under armour", "reebok", "new balance",
+        "asics", "saucony", "brooks", "hoka", "on running",
+        
+        // Fast Fashion
+        "zara", "h&m", "hm", "uniqlo", "gap", "old navy", "forever 21",
+        "asos", "shein", "fashion nova",
+        
+        // Department Stores
+        "nordstrom", "macy's", "macys", "bloomingdale's", "saks",
+        "neiman marcus", "barneys",
+        
+        // Premium/Designer
+        "gucci", "prada", "versace", "burberry", "ralph lauren", "polo",
+        "calvin klein", "tommy hilfiger", "lacoste", "hugo boss",
+        "michael kors", "kate spade", "coach",
+        
+        // Denim
+        "levi's", "levis", "wrangler", "lee", "diesel", "true religion",
+        "7 for all mankind", "ag jeans",
+        
+        // Outdoor
+        "patagonia", "north face", "columbia", "arc'teryx", "rei",
+        
+        // Streetwear
+        "supreme", "off-white", "bape", "stussy", "palace",
+        
+        // Contemporary
+        "allbirds", "everlane", "reformation", "madewell", "j.crew"
+    ]
+    
+    private let blacklistPatterns: Set<String> = [
+        // Items that contain clothing keywords but aren't clothing
+        "pillow case", "pillowcase", "phone case", "laptop case",
+        "shirt hanger", "dress form", "shoe rack", "hat box",
+        "belt buckle", "tie clip", "watch band", "bag charm",
+        "clothing rack", "garment bag", "shoe cleaner", "fabric softener"
+    ]
+    
+    func isClothingItem(_ productName: String) -> Bool {
+        let lowercased = productName.lowercased()
+        
+        // Check blacklist first (avoid false positives)
+        for pattern in blacklistPatterns {
+            if lowercased.contains(pattern) {
+                return false
+            }
+        }
+        
+        // Check for clothing keywords
+        for keyword in clothingKeywords {
+            if lowercased.contains(keyword) {
+                return true
+            }
+        }
+        
+        // Check for clothing brands
+        for brand in clothingBrands {
+            if lowercased.contains(brand) {
+                return true
+            }
+        }
+        
+        return false
+    }
 }
 
 // MARK: - Amazon Parser
@@ -650,6 +773,9 @@ class AmazonEmailParser: EmailParser {
                     let productName = String(html[nameRange]).trimmingCharacters(in: .whitespacesAndNewlines)
                     
                     if let imageURL = URL(string: imageURLString), !productName.isEmpty {
+                        // Filter to clothing items only
+                        guard genericParser.isClothingItem(productName) else { continue }
+                        
                         products.append(ProductData(
                             name: productName,
                             imageURL: imageURL,
@@ -698,6 +824,9 @@ class NikeEmailParser: EmailParser {
                     
                     // Extract product name from surrounding context
                     let productName = extractNearbyText(from: html, around: match.range, pattern: #"<td[^>]*>([^<]+)</td>"#) ?? "Nike Product"
+                    
+                    // Filter to clothing items only
+                    guard genericParser.isClothingItem(productName) else { continue }
                     
                     products.append(ProductData(
                         name: productName,
@@ -757,6 +886,9 @@ class ZaraEmailParser: EmailParser {
                     let productName = String(html[altTextRange]).trimmingCharacters(in: .whitespacesAndNewlines)
                     
                     if let imageURL = URL(string: imageURLString), !productName.isEmpty {
+                        // Filter to clothing items only
+                        guard genericParser.isClothingItem(productName) else { continue }
+                        
                         products.append(ProductData(
                             name: productName,
                             imageURL: imageURL,
