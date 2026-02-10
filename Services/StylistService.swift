@@ -3,6 +3,7 @@
 
 import Foundation
 import SwiftUI
+internal import Combine 
 
 class StylistService {
     static let shared = StylistService()
