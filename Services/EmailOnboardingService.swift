@@ -847,19 +847,12 @@ class GenericEmailParser: EmailParser {
                 }
                 
                 // Brand match logic
-                if ClothingDetector.containsBrand(productName) {
+                if ClothingDetector.isBrandName(productName) {
+                    // Exact match with brand name usually indicates a LOGO/Banner, not a product
+                    score -= 100
+                } else if ClothingDetector.containsBrand(productName) {
                     // Contains brand name (e.g. "Madewell Jeans") is good
                     score += 50
-                    
-                    // But if it is EXACTLY the brand name, it might be a logo/banner
-                    if ClothingDetector.isBrandName(productName) {
-                        // Check dimensions to disambiguate
-                        if width > 350 {
-                            // Large image + Just Brand Name = Likely Banner/Header
-                            score -= 150 // Net result: -100
-                        }
-                        // Else: Small/Unknown size -> Assume valid item with poor alt text
-                    }
                 }
                 
                 // Size/Qty clues in context (heuristic)
