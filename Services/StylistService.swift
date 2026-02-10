@@ -139,20 +139,32 @@ class StylistService {
             // Extract color from image
             let color = extractColorFromItem(item)
             
-            //Build category description
+            // Build category description
             var categoryName = item.category?.name.lowercased() ?? "garment"
             
             // Enhanced category naming
             categoryName = enhanceCategoryName(categoryName)
             
-            // Build full description: [color] [category] [brand/name]
-            var desc = "\(color) \(categoryName)"
+            // Detect patterns/graphics from name and tags
+            let details = extractDetailsFromItem(item)
+            
+            // Build full description: [color] [details] [category] [brand/name]
+            var desc = "\(color)"
+            
+            // Add pattern/graphic details if found
+            if !details.isEmpty {
+                desc += " \(details)"
+            }
+            
+            desc += " \(categoryName)"
             
             if let brand = item.brand, !brand.isEmpty {
                 desc += " by \(brand)"
             }
             
-            if !item.name.isEmpty && !item.name.lowercased().contains(categoryName) {
+            // Only add name if it's not redundant with details already captured
+            let nameLower = item.name.lowercased()
+            if !item.name.isEmpty && !nameLower.contains(categoryName) && !details.lowercased().contains(nameLower) {
                 desc += " (\(item.name))"
             }
             
@@ -169,6 +181,72 @@ class StylistService {
         
         Full body close up portrait, 3/4 angle view, neutral grey studio background, soft key lighting with subtle rim light, editorial fashion photography, photorealistic, sharp focus on clothing details, professional studio quality
         """
+    }
+    
+    private func extractDetailsFromItem(_ item: ClothingItem) -> String {
+        var details: [String] = []
+        
+        // Check name and tags for patterns, graphics, and style details
+        let searchText = (item.name + " " + item.tags.joined(separator: " ")).lowercased()
+        
+        // Graphics/Text
+        if searchText.contains("graphic") {
+            details.append("graphic print")
+        } else if searchText.contains("logo") {
+            details.append("logo detail")
+        } else if searchText.contains("text") || searchText.contains("slogan") {
+            details.append("text print")
+        }
+        
+        // Patterns
+        if searchText.contains("stripe") {
+            details.append("striped")
+        } else if searchText.contains("floral") {
+            details.append("floral pattern")
+        } else if searchText.contains("dot") || searchText.contains("polka") {
+            details.append("polka dot")
+        } else if searchText.contains("check") || searchText.contains("plaid") {
+            details.append("checkered")
+        } else if searchText.contains("animal") || searchText.contains("leopard") || searchText.contains("zebra") {
+            details.append("animal print")
+        } else if searchText.contains("camo") {
+            details.append("camouflage")
+        } else if searchText.contains("tie-dye") || searchText.contains("tie dye") {
+            details.append("tie-dye")
+        }
+        
+        // Textures/Materials
+        if searchText.contains("denim") {
+            details.append("denim")
+        } else if searchText.contains("leather") {
+            details.append("leather")
+        } else if searchText.contains("knit") || searchText.contains("sweater") {
+            details.append("knitted")
+        } else if searchText.contains("silk") || searchText.contains("satin") {
+            details.append("silky")
+        } else if searchText.contains("velvet") {
+            details.append("velvet")
+        }
+        
+        // Fit/Style
+        if searchText.contains("oversized") {
+            details.append("oversized fit")
+        } else if searchText.contains("fitted") || searchText.contains("slim") {
+            details.append("fitted")
+        } else if searchText.contains("loose") || searchText.contains("relaxed") {
+            details.append("relaxed fit")
+        } else if searchText.contains("crop") {
+            details.append("cropped")
+        }
+        
+        // Distressing/Finish
+        if searchText.contains("distress") || searchText.contains("ripped") {
+            details.append("distressed")
+        } else if searchText.contains("vintage") || searchText.contains("worn") {
+            details.append("vintage")
+        }
+        
+        return details.joined(separator: " ")
     }
     
     private func extractColorFromItem(_ item: ClothingItem) -> String {
@@ -215,7 +293,7 @@ class StylistService {
             throw StylistError.invalidEndpoint
         }
         
-        // Build request body for Stability AI
+        // Build request body for Stability AI (SDXL optimized)
         let requestBody: [String: Any] = [
             "text_prompts": [
                 [
@@ -223,15 +301,16 @@ class StylistService {
                     "weight": 1
                 ],
                 [
-                    "text": "blurry, distorted, low quality, cartoon, illustration, deformed",
+                    // Enhanced negative prompt for SDXL
+                    "text": "blurry, distorted, low quality, cartoon, illustration, deformed body, extra limbs, malformed hands, disconnected clothing, floating garments, incorrect anatomy, unrealistic proportions, oversaturated colors, watermark, text overlay, multiple people, bad lighting, amateur photo",
                     "weight": -1
                 ]
             ],
-            "cfg_scale": 7,
+            "cfg_scale": 12,  // Increased from 7 for better prompt adherence
             "height": 1024,
-            "width": 1024,
+            "width": 768,     // Changed to 3:4 ratio for fashion photography
             "samples": 1,
-            "steps": 30
+            "steps": 40       // Increased from 30 for more detail
         ]
         
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
