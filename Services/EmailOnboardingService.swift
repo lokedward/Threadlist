@@ -110,11 +110,12 @@ class EmailOnboardingService: ObservableObject {
                         return
                     }
                     
-                    guard let user = result?.user,
-                          let accessToken = user.accessToken.tokenString else {
+                    guard let user = result?.user else {
                         continuation.resume(throwing: EmailError.authenticationFailed)
                         return
                     }
+                    
+                    let accessToken = user.accessToken.tokenString
                     
                     let token = GmailToken(
                         accessToken: accessToken,
