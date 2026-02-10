@@ -287,7 +287,7 @@ class EmailOnboardingService: ObservableObject {
     
     // MARK: - Email Parsing
     
-    private func parseEmails(_ emails: [GmailMessage], token: GmailToken) async throws -> [ProductData] {
+    private func parseEmails(_ emails: [GmailMessage]) async throws -> [ProductData] {
         var allProducts: [ProductData] = []
         
         for (index, email) in emails.enumerated() {
@@ -397,8 +397,11 @@ class EmailOnboardingService: ObservableObject {
     // MARK: - Progress Updates
     
     @MainActor
-    private func updateProgress(_ phase: ImportPhase) {
+    private func updateProgress(_ phase: ImportPhase, totalEmails: Int? = nil) {
         progress?.phase = phase
+        if let total = totalEmails {
+            progress?.totalEmails = total
+        }
     }
 }
 
