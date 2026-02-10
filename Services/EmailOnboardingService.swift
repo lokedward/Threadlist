@@ -1247,15 +1247,13 @@ class LululemonEmailParser: EmailParser {
             let imgTag = String(html[imgRange])
             
             // Extract SRC
-            guard let srcRange = imgTag.range(of: #"src=["']([^"']+)["']"#, options: .regularExpression) else { continue }
+            guard let srcMatch = imgTag.range(of: #"src=["']([^"']+)["']"#, options: .regularExpression),
+                  let urlRange = Range(srcMatch, in: imgTag) else { continue }
             
             // Clean URL
-            let rawUrl = String(imgTag[srcRange])
-            
-            // Trim quotes safely (e.g. src="URL" -> ["src=", "URL"])
-            let parts = rawUrl.split(whereSeparator: { $0 == "\"" || $0 == "'" })
-            guard let lastPart = parts.last else { continue }
-            let urlString = String(lastPart)
+            let rawUrl = String(imgTag[urlRange])
+            // Trim quotes safely
+            let urlString = rawUrl.split(whereSeparator: { $0 == "\"" || $0 == "'" }).last.map(String.init) ?? ""
             
             guard let imageURL = URL(string: urlString), !seenURLs.contains(imageURL) else { continue }
             
