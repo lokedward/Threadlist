@@ -47,12 +47,12 @@ struct EmailImportView: View {
             // Icon
             Image(systemName: "envelope.fill")
                 .font(.system(size: 60))
-                .foregroundColor(PoshTheme.Colors.primaryAccent)
+                .foregroundColor(PoshTheme.Colors.primaryAccentStart)
             
             // Title
             Text("Import from Gmail")
-                .font(PoshTheme.Typography.headerLarge)
-                .foregroundColor(PoshTheme.Colors.primaryText)
+                .font(PoshTheme.Typography.headline(size: 24))
+                .foregroundColor(PoshTheme.Colors.headline)
             
             // Description
             VStack(spacing: 12) {
@@ -128,7 +128,7 @@ struct EmailImportView: View {
                 dismiss()
             }
             .font(.system(size: 15, weight: .medium))
-            .foregroundColor(PoshTheme.Colors.secondaryText)
+            .foregroundColor(PoshTheme.Colors.body)
             .padding(.bottom, 32)
         }
         .background(PoshTheme.Colors.background)
@@ -144,20 +144,20 @@ struct EmailImportView: View {
             VStack(spacing: 16) {
                 ProgressView()
                     .scaleEffect(1.5)
-                    .tint(PoshTheme.Colors.primaryAccent)
+                    .tint(PoshTheme.Colors.primaryAccentStart)
                 
                 if let progress = service.progress {
                     Text(progress.phase.displayText)
-                        .font(PoshTheme.Typography.headerMedium)
-                        .foregroundColor(PoshTheme.Colors.primaryText)
+                        .font(PoshTheme.Typography.headline(size: 18))
+                        .foregroundColor(PoshTheme.Colors.headline)
                     
                     if progress.totalEmails > 0 {
                         Text("\(progress.processedEmails) of \(progress.totalEmails) emails")
                             .font(.system(size: 14))
-                            .foregroundColor(PoshTheme.Colors.secondaryText)
+                            .foregroundColor(PoshTheme.Colors.body)
                         
                         ProgressView(value: progress.percentComplete)
-                            .tint(PoshTheme.Colors.primaryAccent)
+                            .tint(PoshTheme.Colors.primaryAccentStart)
                             .frame(width: 200)
                     }
                 }
@@ -168,7 +168,7 @@ struct EmailImportView: View {
             // Privacy note
             Text("Access will auto-revoke when complete")
                 .font(.system(size: 12))
-                .foregroundColor(PoshTheme.Colors.secondaryText)
+                .foregroundColor(PoshTheme.Colors.body)
                 .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -182,12 +182,12 @@ struct EmailImportView: View {
             // Header
             VStack(spacing: 8) {
                 Text("Found \(importedItems.count) items!")
-                    .font(PoshTheme.Typography.headerLarge)
-                    .foregroundColor(PoshTheme.Colors.primaryText)
+                    .font(PoshTheme.Typography.headline(size: 24))
+                    .foregroundColor(PoshTheme.Colors.headline)
                 
                 Text("Review and add to your wardrobe")
                     .font(.system(size: 14))
-                    .foregroundColor(PoshTheme.Colors.secondaryText)
+                    .foregroundColor(PoshTheme.Colors.body)
             }
             .padding(.top, 32)
             
@@ -216,7 +216,7 @@ struct EmailImportView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(PoshTheme.Colors.primaryAccent)
+                        .background(PoshTheme.Colors.primaryAccentStart)
                         .cornerRadius(12)
                 }
                 
@@ -224,7 +224,7 @@ struct EmailImportView: View {
                     dismiss()
                 }
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(PoshTheme.Colors.secondaryText)
+                .foregroundColor(PoshTheme.Colors.body)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
@@ -260,12 +260,12 @@ struct FeatureRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(PoshTheme.Colors.primaryAccent)
+                .foregroundColor(PoshTheme.Colors.primaryAccentStart)
                 .frame(width: 24)
             
             Text(text)
                 .font(.system(size: 14))
-                .foregroundColor(PoshTheme.Colors.secondaryText)
+                .foregroundColor(PoshTheme.Colors.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -283,41 +283,41 @@ struct TimeRangeOption: View {
                 HStack {
                     Text(range.displayName)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(PoshTheme.Colors.primaryText)
+                        .foregroundColor(PoshTheme.Colors.headline)
                     
                     if isPremium {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(PoshTheme.Colors.primaryAccent)
+                            .foregroundColor(PoshTheme.Colors.primaryAccentStart)
                     }
                     
                     if isLocked {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(PoshTheme.Colors.secondaryText)
+                            .foregroundColor(PoshTheme.Colors.body)
                     }
                 }
                 
                 Text(isPremium ? "More complete wardrobe" : "Fastest, captures recent items")
                     .font(.system(size: 12))
-                    .foregroundColor(PoshTheme.Colors.secondaryText)
+                    .foregroundColor(PoshTheme.Colors.body)
             }
             
             Spacer()
             
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(PoshTheme.Colors.primaryAccent)
+                    .foregroundColor(PoshTheme.Colors.primaryAccentStart)
             }
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? PoshTheme.Colors.primaryAccent.opacity(0.1) : PoshTheme.Colors.surface)
+                .fill(isSelected ? PoshTheme.Colors.primaryAccentStart.opacity(0.1) : PoshTheme.Colors.cardBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? PoshTheme.Colors.primaryAccent : Color.clear, lineWidth: 2)
+                .stroke(isSelected ? PoshTheme.Colors.primaryAccentStart : Color.clear, lineWidth: 2)
         )
     }
 }
@@ -340,14 +340,14 @@ struct ImportedItemCard: View {
             // Name
             Text(item.name)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(PoshTheme.Colors.primaryText)
+                .foregroundColor(PoshTheme.Colors.headline)
                 .lineLimit(2)
             
             // Brand
             if let brand = item.brand {
                 Text(brand)
                     .font(.system(size: 10))
-                    .foregroundColor(PoshTheme.Colors.secondaryText)
+                    .foregroundColor(PoshTheme.Colors.body)
             }
         }
     }
