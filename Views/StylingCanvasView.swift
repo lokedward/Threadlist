@@ -12,7 +12,7 @@ struct StylingCanvasView: View {
     @State private var errorMessage: String?
     @State private var showUpgradePrompt = false
     
-    private var stylistService = StylistService.shared
+    let stylistService = StylistService.shared
     
     var body: some View {
         ZStack {
