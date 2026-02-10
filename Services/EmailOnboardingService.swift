@@ -690,7 +690,7 @@ class ClothingDetector {
         return false
     }
     
-    static func isLikelyProductImage(url: String, alt: String?) -> Bool {
+    static func isLikelyProductImage(url: String, alt: String?, width: Int? = nil, height: Int? = nil) -> Bool {
         let lowerUrl = url.lowercased()
         let lowerAlt = alt?.lowercased() ?? ""
         
@@ -705,6 +705,13 @@ class ClothingDetector {
         let altBlocklist = ["logo", "icon", "facebook", "twitter", "instagram", "pinterest", "youtube", "tiktok", "linkedin", "home", "menu", "search", "cart", "account", "profile", "banner"]
         if altBlocklist.contains(where: { lowerAlt.contains($0) }) { return false }
         
+        // 4. Check Dimensions (if available)
+        if let w = width, let h = height {
+            if w < 100 || h < 100 { return false } // Too small
+            let ratio = Double(w) / Double(h)
+            if ratio > 2.0 || ratio < 0.4 { return false } // Too wide (banner/logo) or too tall
+        }
+        
         return true
     }
 }
@@ -717,22 +724,26 @@ class GenericEmailParser: EmailParser {
         
         var products: [ProductData] = []
         
-        // Strategy: Find all images with product-like alt text and nearby text for names
-        let imagePattern = #"<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']+)["'][^>]*>"#
-        let regex = try NSRegularExpression(pattern: imagePattern, options: .caseInsensitive)
+        // Strategy: Find all images tags and parse attributes
+        let imgTagPattern = #"<img\s+([^>]+)>"#
+        let regex = try NSRegularExpression(pattern: imgTagPattern, options: .caseInsensitive)
         let matches = regex.matches(in: html, range: NSRange(html.startIndex..., in: html))
         
         for match in matches {
-            if match.numberOfRanges >= 3,
-               let imageURLRange = Range(match.range(at: 1), in: html),
-               let altTextRange = Range(match.range(at: 2), in: html) {
+            if match.numberOfRanges >= 2,
+               let tagRange = Range(match.range(at: 1), in: html) {
                 
-                let imageURLString = String(html[imageURLRange])
-                let altText = String(html[altTextRange])
+                let tagContent = String(html[tagRange])
                 
-                // Filter out common non-product images
-                guard ClothingDetector.isLikelyProductImage(url: imageURLString, alt: altText),
-                      let imageURL = URL(string: imageURLString) else {
+                guard let imageURLString = extractAttribute("src", from: tagContent),
+                      let imageURL = URL(string: imageURLString) else { continue }
+                
+                let altText = extractAttribute("alt", from: tagContent) ?? ""
+                let width = Int(extractAttribute("width", from: tagContent) ?? "0")
+                let height = Int(extractAttribute("height", from: tagContent) ?? "0")
+                
+                // Filter out non-product images
+                guard ClothingDetector.isLikelyProductImage(url: imageURLString, alt: altText, width: width == 0 ? nil : width, height: height == 0 ? nil : height) else {
                     continue
                 }
                 
@@ -759,6 +770,17 @@ class GenericEmailParser: EmailParser {
         }
         
         return products
+    }
+    
+    private func extractAttribute(_ name: String, from text: String) -> String? {
+        let pattern = name + #"=["']([^"']+)["']"#
+        if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+           let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+           match.numberOfRanges >= 2,
+           let range = Range(match.range(at: 1), in: text) {
+            return String(text[range])
+        }
+        return nil
     }
     
     func cleanProductName(_ name: String) -> String {

@@ -308,7 +308,7 @@ struct ImageSectionView: View, Equatable {
         VStack(spacing: 16) {
             if let uiImage = image {
                 Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity).frame(height: 300)
+                    .frame(width: UIScreen.main.bounds.width - 40, height: 300)
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 16)).poshCard()
                 
