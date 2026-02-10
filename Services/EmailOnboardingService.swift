@@ -303,6 +303,14 @@ class EmailOnboardingService: ObservableObject {
             // Select parser based on sender
             let parser = selectParser(for: email)
             
+            // Validate transactional content (skip marketing blasts)
+            if let html = email.htmlBody, !isTransactionalEmail(html) {
+                 await MainActor.run {
+                    progress?.detailMessage = "Skipping non-transactional email..."
+                }
+                continue
+            }
+            
             // Extract products
             if let products = try? await parser.extractProducts(from: email) {
                 allProducts.append(contentsOf: products)
@@ -345,6 +353,12 @@ class EmailOnboardingService: ObservableObject {
         if lowercased.contains("target") { return "Target" }
         
         return "online store"
+    }
+    
+    private func isTransactionalEmail(_ html: String) -> Bool {
+        let lower = html.lowercased()
+        let keywords = ["order #", "order number", "order id", "receipt", "invoice", "payment", "total", "shipped", "tracking number", "shipment"]
+        return keywords.contains(where: { lower.contains($0) })
     }
     
     private func selectParser(for email: GmailMessage) -> EmailParser {
@@ -672,7 +686,10 @@ class ClothingDetector {
         "shirt hanger", "dress form", "shoe rack", "hat box",
         "belt buckle", "tie clip", "watch band", "bag charm",
         "clothing rack", "garment bag", "shoe cleaner", "fabric softener",
-        "shipping", "tax", "total", "subtotal", "discount", "receipt", "order"
+        "shipping", "tax", "total", "subtotal", "discount", "receipt", "order",
+        "shop now", "view online", "view in browser", "unsubscribe", "privacy",
+        "terms", "returns", "exchange", "gift card", "store locator",
+        "free delivery", "percent off", "% off", "sale", "clearance", "limited time"
     ]
     
     static func isBlacklisted(_ name: String) -> Bool {
