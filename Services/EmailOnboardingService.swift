@@ -20,7 +20,8 @@ class EmailOnboardingService: ObservableObject {
     // MARK: - Public API
     
     /// Import wardrobe items from Gmail order confirmations
-    func importFromGmail(timeRange: TimeRange, userTier: GenerationTier) async throws -> [ClothingItem] {
+    /// Returns parsed products for user review (doesn't create ClothingItems yet)
+    func importFromGmail(timeRange: TimeRange, userTier: GenerationTier) async throws -> [EmailProductItem] {
         // Validate tier access
         guard canAccessTimeRange(timeRange, tier: userTier) else {
             throw EmailError.tierRestriction
@@ -38,24 +39,27 @@ class EmailOnboardingService: ObservableObject {
         }
         
         do {
-            // Step 1: OAuth2 authentication
+            // Step 1: Authenticate with Gmail
             let token = try await requestGmailAccess()
             
-            // Step 2: Search for order emails
+            // Step 2: Search for order confirmation emails
             await updateProgress(.searching)
             let emails = try await searchOrderEmails(token: token, range: timeRange)
             
-            await MainActor.run {
-                progress?.totalEmails = emails.count
-            }
-            
             // Step 3: Parse emails and extract products
-            await updateProgress(.parsing)
-            let products = try await parseEmails(emails, token: token)
+            await updateProgress(.parsing, totalEmails: emails.count)
+            let products = try await parseEmails(emails)
             
-            // Step 4: Download images and create ClothingItems
-            await updateProgress(.downloading)
-            let items = try await createClothingItems(from: products)
+            // Step 4: Convert to EmailProductItem for review
+            let items = products.map { product in
+                EmailProductItem(
+                    name: product.name,
+                    imageURL: product.imageURL,
+                    brand: product.brand,
+                    size: product.size,
+                    color: product.color
+                )
+            }
             
             // Step 5: Revoke token
             try await revokeGmailToken(token)

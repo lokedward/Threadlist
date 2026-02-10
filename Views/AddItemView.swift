@@ -40,10 +40,15 @@ struct AddItemView: View {
     @State private var size = ""
     @State private var tagsText = ""
     
+    // Prefilled items (from Email Import)
+    var prefilledItems: [EmailProductItem]? = nil
+    
     // UI state
     @State private var isSaving = false
     @State private var isProcessingImage = false
     @State private var isMetadataExpanded = true
+    @State private var emailItemsQueue: [EmailProductItem] = []
+    @State private var isLoadingEmailImage = false
     
     var canSave: Bool {
         let hasImage = additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty
@@ -68,7 +73,8 @@ struct AddItemView: View {
                 onAddPhoto: { showingImageSourcePicker = true },
                 onOpenBulkGallery: { showingBulkPhotoPicker = true },
                 onSave: saveItem,
-                onCropComplete: { img in selectedImage = img }
+                onCropComplete: { img in selectedImage = img },
+                onSkip: emailItemsQueue.isEmpty ? nil : skipEmailItem
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -106,11 +112,63 @@ struct AddItemView: View {
                 }
             }
             .onAppear {
-                if selectedCategory == nil { selectedCategory = categories.first }
+                if let prefilled = prefilledItems, !prefilled.isEmpty {
+                    additionMode = .multiple
+                    emailItemsQueue = prefilled
+                    loadNextEmailItem()
+                } else if selectedCategory == nil { 
+                    selectedCategory = categories.first 
+                }
             }
         }
     }
     
+    // MARK: - Email Import Logic
+    
+    private func loadNextEmailItem() {
+        guard !emailItemsQueue.isEmpty else {
+            bulkImageQueue.removeAll()
+            dismiss()
+            return
+        }
+        
+        let item = emailItemsQueue[0]
+        
+        name = item.name
+        brand = item.brand ?? ""
+        size = item.size ?? ""
+        // Keep category selection or default
+        if selectedCategory == nil { selectedCategory = categories.first }
+        
+        isLoadingEmailImage = true
+        bulkImageQueue.removeAll()
+        
+        if let url = item.imageURL {
+            Task {
+                if let data = try? await URLSession.shared.data(from: url).0,
+                   let image = UIImage(data: data) {
+                    await MainActor.run {
+                        self.bulkImageQueue = [image]
+                        self.isLoadingEmailImage = false
+                    }
+                } else {
+                    await MainActor.run {
+                        self.isLoadingEmailImage = false
+                    }
+                }
+            }
+        } else {
+            isLoadingEmailImage = false
+        }
+    }
+    
+    private func skipEmailItem() {
+        if !emailItemsQueue.isEmpty {
+            emailItemsQueue.removeFirst()
+            loadNextEmailItem()
+        }
+    }
+
     private func saveItem() {
         let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
         guard let image = currentImage, let category = selectedCategory else { return }
@@ -131,9 +189,16 @@ struct AddItemView: View {
                         dismiss()
                     } else {
                         bulkImageQueue.removeFirst()
-                        name = ""
-                        withAnimation { isMetadataExpanded = false }
-                        if bulkImageQueue.isEmpty { dismiss() }
+                        
+                        if !emailItemsQueue.isEmpty {
+                            // We just saved the current email item (index 0)
+                            emailItemsQueue.removeFirst()
+                            loadNextEmailItem()
+                        } else {
+                            name = ""
+                            withAnimation { isMetadataExpanded = false }
+                            if bulkImageQueue.isEmpty { dismiss() }
+                        }
                     }
                 }
             } catch {
@@ -165,6 +230,7 @@ struct MainFormView: View {
     let onOpenBulkGallery: () -> Void
     let onSave: () -> Void
     let onCropComplete: (UIImage) -> Void
+    var onSkip: (() -> Void)? = nil
     
     var body: some View {
         ZStack {
@@ -205,6 +271,15 @@ struct MainFormView: View {
                             }
                             .poshButton()
                             .disabled(isSaving)
+                            
+                            if let onSkip = onSkip {
+                                Button(action: onSkip) {
+                                    Text("SKIP THIS ITEM")
+                                        .font(.system(size: 12, weight: .bold)).tracking(2)
+                                        .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.8))
+                                }
+                                .padding(.top, 8)
+                            }
                         }
                     }
                 }

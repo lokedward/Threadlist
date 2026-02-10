@@ -9,8 +9,9 @@ struct EmailImportView: View {
     @State private var showingTimeRangeSelection = false
     @State private var selectedRange: TimeRange = .sixMonths
     @State private var showingUpgradePrompt = false
-    @State private var importedItems: [ClothingItem] = []
+    @State private var importedItems: [EmailProductItem] = []
     @State private var showingReviewScreen = false
+    @State private var showingBulkAddFlow = false
     
     // User tier (get from app state)
     let userTier: GenerationTier
@@ -203,41 +204,38 @@ struct EmailImportView: View {
     
     // MARK: - Review Screen
     
+    // MARK: - Review Screen (Transition)
+    
     private var reviewScreen: some View {
-        VStack(spacing: 24) {
-            // Header
-            VStack(spacing: 8) {
-                Text("Found \(importedItems.count) items!")
-                    .font(PoshTheme.Typography.headline(size: 24))
+        VStack(spacing: 32) {
+            Spacer()
+            
+            // Success Icon
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 80))
+                .foregroundColor(.green)
+                .symbolEffect(.bounce, value: showingReviewScreen)
+            
+            VStack(spacing: 12) {
+                Text("Scan Complete!")
+                    .font(PoshTheme.Typography.headline(size: 28))
                     .foregroundColor(PoshTheme.Colors.headline)
                 
-                Text("Review and add to your wardrobe")
-                    .font(.system(size: 14))
+                Text("We found \(importedItems.count) potential items from your emails.")
+                    .font(.system(size: 16))
                     .foregroundColor(PoshTheme.Colors.body)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
-            .padding(.top, 32)
             
-            // Grid of items
-            ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 16) {
-                    ForEach(importedItems, id: \.id) { item in
-                        ImportedItemCard(item: item)
-                    }
-                }
-                .padding(.horizontal, 24)
-            }
+            Spacer()
             
             // Actions
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 Button {
-                    // TODO: Add all items to wardrobe
-                    dismiss()
+                    showingBulkAddFlow = true
                 } label: {
-                    Text("Add All to Wardrobe")
+                    Text("Review Items to Add")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -255,7 +253,11 @@ struct EmailImportView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PoshTheme.Colors.background)
+        .fullScreenCover(isPresented: $showingBulkAddFlow, onDismiss: { dismiss() }) {
+            AddItemView(prefilledItems: importedItems)
+        }
     }
     
     // MARK: - Actions
@@ -348,36 +350,7 @@ struct TimeRangeOption: View {
     }
 }
 
-struct ImportedItemCard: View {
-    let item: ClothingItem
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Image
-            if let image = ImageStorageService.shared.loadImage(withID: item.imageID) {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 120)
-                    .clipped()
-                    .cornerRadius(8)
-            }
-            
-            // Name
-            Text(item.name)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(PoshTheme.Colors.headline)
-                .lineLimit(2)
-            
-            // Brand
-            if let brand = item.brand {
-                Text(brand)
-                    .font(.system(size: 10))
-                    .foregroundColor(PoshTheme.Colors.body)
-            }
-        }
-    }
-}
+
 
 // MARK: - Preview
 
