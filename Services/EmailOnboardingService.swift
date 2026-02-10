@@ -916,12 +916,12 @@ class GenericEmailParser: EmailParser {
     }
     
     private func extractNearbyText(from html: String, around range: Range<String.Index>) -> String {
-        // Extract +/- 1000 chars to account for bloated HTML
+        // Extract +/- 300 chars
         let startOffset = html.distance(from: html.startIndex, to: range.lowerBound)
         let endOffset = html.distance(from: html.startIndex, to: range.upperBound)
         
-        let start = max(0, startOffset - 1000)
-        let end = min(html.count, endOffset + 1000)
+        let start = max(0, startOffset - 300)
+        let end = min(html.count, endOffset + 300)
         
         let startIndex = html.index(html.startIndex, offsetBy: start)
         let endIndex = html.index(html.startIndex, offsetBy: end)
@@ -930,17 +930,8 @@ class GenericEmailParser: EmailParser {
     }
     
     private func hasPricePattern(_ text: String) -> Bool {
-        // Strip HTML tags to handle cases like <span>$</span><span>10.00</span>
-        let plainText = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression, range: nil)
-        
-        // Relaxed regex:
-        // 1. Optional $ or £ or €
-        // 2. Optional whitespace
-        // 3. Digits
-        // 4. Optional decimals
-        // 5. Optional USD/EUR suffix
-        let priceRegex = #"[$£€]\s*\d+([.,]\d{2})?|\d+([.,]\d{2})?\s*(USD|EUR|GBP)"#
-        return plainText.range(of: priceRegex, options: [.regularExpression, .caseInsensitive]) != nil
+        let priceRegex = #"\$\d+([.,]\d{2})?|\d+([.,]\d{2})?\s*USD"#
+        return text.range(of: priceRegex, options: [.regularExpression, .caseInsensitive]) != nil
     }
     
     func cleanProductName(_ name: String) -> String {
