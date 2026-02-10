@@ -109,8 +109,8 @@ class StylistService {
     // MARK: - Private Helpers
     
     private func buildPrompt(for items: [ClothingItem], gender: Gender) -> String {
-        let genderTerm = gender == .female ? "female" : "male"
-        let modelDescription = "A professional fashion model photo of a \(genderTerm) model"
+        let genderTerm = gender ==.female ? "female" : "male"
+        let modelDescription = "Professional fashion photography of a \(genderTerm) model wearing"
         
         // Sort items by layering order for natural description
         let sortedItems = items.sorted { layeringOrder(for: $0) < layeringOrder(for: $1) }
@@ -118,27 +118,76 @@ class StylistService {
         var clothingDescriptions: [String] = []
         
         for item in sortedItems {
-            var desc = ""
-            if let category = item.category?.name.lowercased() {
-                desc += "\(category)"
-            }
+            // Extract color from image
+            let color = extractColorFromItem(item)
+            
+            //Build category description
+            var categoryName = item.category?.name.lowercased() ?? "garment"
+            
+            // Enhanced category naming
+            categoryName = enhanceCategoryName(categoryName)
+            
+            // Build full description: [color] [category] [brand/name]
+            var desc = "\(color) \(categoryName)"
+            
             if let brand = item.brand, !brand.isEmpty {
                 desc += " by \(brand)"
             }
-            if !item.name.isEmpty {
+            
+            if !item.name.isEmpty && !item.name.lowercased().contains(categoryName) {
                 desc += " (\(item.name))"
             }
+            
             clothingDescriptions.append(desc)
         }
         
-        let clothingList = clothingDescriptions.joined(separator: ", ")
+        // Format as bullet list for better SDXL comprehension
+        let clothingList = clothingDescriptions.map { "- \($0)" }.joined(separator: "\n")
         
-        // Final prompt
+        // Enhanced prompt with detailed photography direction
         return """
-        \(modelDescription) wearing: \(clothingList). 
-        Full body shot, neutral background, professional studio lighting, 
-        high fashion editorial style, ultra realistic, 8k quality.
+        \(modelDescription):
+        \(clothingList)
+        
+        Full body portrait, 3/4 angle view, neutral grey studio background, soft key lighting with subtle rim light, editorial fashion photography, photorealistic, sharp focus on clothing details, professional studio quality
         """
+    }
+    
+    private func extractColorFromItem(_ item: ClothingItem) -> String {
+        // Load the image and extract color
+        if let image = ImageStorageService.shared.loadImage(withID: item.imageID) {
+            return image.dominantColorName()
+        }
+        return "neutral" // fallback
+    }
+    
+    private func enhanceCategoryName(_ category: String) -> String {
+        // Map generic categories to more specific descriptions
+        let lowercased = category.lowercased()
+        
+        if lowercased.contains("top") || lowercased.contains("shirt") || lowercased == "t-shirt" {
+            return "crew neck t-shirt"
+        } else if lowercased.contains("jean") || lowercased.contains("denim") {
+            return "slim-fit jeans"
+        } else if lowercased.contains("jacket") && !lowercased.contains("leather") {
+            return "jacket"
+        } else if lowercased.contains("dress") {
+            return "midi dress"
+        } else if lowercased.contains("skirt") {
+            return "skirt"
+        } else if lowercased.contains("pant") && !lowercased.contains("jean") {
+            return "trousers"
+        } else if lowercased.contains("shoe") || lowercased.contains("sneaker") {
+            return "shoes"
+        } else if lowercased.contains("boot") {
+            return "boots"
+        } else if lowercased.contains("bag") {
+            return "handbag"
+        } else if lowercased.contains("accessory") || lowercased.contains("hat") {
+            return "accessory"
+        }
+        
+        return category // return original if no match
     }
     
     // MARK: - API Calls
