@@ -308,8 +308,8 @@ class StylistService {
                 ]
             ],
             "cfg_scale": 12,  // Increased from 7 for better prompt adherence
-            "height": 1024,
-            "width": 768,     // Changed to 3:4 ratio for fashion photography
+            "height": 1152,   // SDXL supported portrait dimension
+            "width": 896,     // 9:11.5 ratio for fashion photography
             "samples": 1,
             "steps": 40       // Increased from 30 for more detail
         ]
