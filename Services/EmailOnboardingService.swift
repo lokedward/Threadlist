@@ -276,8 +276,9 @@ class EmailOnboardingService: ObservableObject {
         
         // Search for common order-related keywords in subject
         // Much broader than before to catch forwarded emails and various retailers
+        // Broad query to catch all potential orders, filtering happens in isTransactionalEmail
         let query = """
-        subject:(order OR shipped OR delivered OR delivery OR shipment OR confirmation OR receipt OR invoice OR "thank you for your purchase")
+        subject:(order OR shipped OR delivered OR shipment OR confirmation OR receipt OR invoice OR "thank you for your purchase")
         \(timeFilter)
         """
         
@@ -357,7 +358,15 @@ class EmailOnboardingService: ObservableObject {
     
     private func isTransactionalEmail(_ html: String) -> Bool {
         let lower = html.lowercased()
-        let keywords = ["order #", "order number", "order id", "receipt", "invoice", "payment", "total", "shipped", "tracking number", "shipment"]
+        // Stricter keywords to avoid marketing emails that mention "order" or "total"
+        let keywords = [
+            "order #", "order number", "order id", 
+            "receipt #", "invoice #", 
+            "order total", "grand total", "payment method",
+            "tracking number", "track your package", "track my package",
+            "your order has shipped", "shipment confirmation", 
+            "thank you for your purchase", "thanks for your order"
+        ]
         return keywords.contains(where: { lower.contains($0) })
     }
     
@@ -619,6 +628,10 @@ class ClothingDetector {
         "jacket", "coat", "blazer", "parka", "puffer", "bomber", "trench",
         "raincoat", "peacoat", "overcoat", "anorak", "gilet", "poncho", "cape",
         
+        // Bottoms
+        "pant", "pants", "bottoms", "trousers", "slacks", "chinos", "cargos", 
+        "joggers", "leggings", "sweatpants", "shorts", "jeans", "denim",
+        
         // Suits & Formal
         "suit", "tuxedo", "tux", "suit jacket", "suit pants", "dress pants",
         "dress shirt", "bow tie", "cummerbund",
@@ -689,7 +702,9 @@ class ClothingDetector {
         "shipping", "tax", "total", "subtotal", "discount", "receipt", "order",
         "shop now", "view online", "view in browser", "unsubscribe", "privacy",
         "terms", "returns", "exchange", "gift card", "store locator",
-        "free delivery", "percent off", "% off", "sale", "clearance", "limited time"
+        "free delivery", "percent off", "% off", "sale", "clearance", "limited time",
+        "barcode", "qr code", "apple wallet", "apple pay", "google pay", "add to wallet", "wallet",
+        "download app", "get the app", "app store", "play store", "social", "follow us"
     ]
     
     static func isBlacklisted(_ name: String) -> Bool {
