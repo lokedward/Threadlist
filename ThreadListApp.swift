@@ -37,6 +37,15 @@ struct ThreadListApp: App {
         }
     }()
     
+    init() {
+        // Restore previous Google Sign-In state
+        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+            if let error = error {
+                print("Google Sign-In restore failed: \(error.localizedDescription)")
+            }
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()

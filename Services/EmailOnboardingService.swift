@@ -354,7 +354,7 @@ class EmailOnboardingService: ObservableObject {
 
 // MARK: - Supporting Types
 
-enum TimeRange {
+enum TimeRange: Equatable {
     case sixMonths   // Free tier
     case twoYears    // Premium
     case custom(Date) // Premium+
