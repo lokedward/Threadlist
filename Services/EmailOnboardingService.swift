@@ -767,20 +767,16 @@ class ClothingDetector {
 
         // 3. Dimension Logic
         if let w = width {
-            // Allow small thumbnails (e.g. 90px+)
-            if w < 90 { return false }
+            // Lululemon thumbnails are 150px. 
+            // Tracking maps are often 300px+.
+            // Banner detection:
+            if w > 300 { return false } // Reject wide images (like the 360px map)
+            if w < 90 { return false }  // Keep min width safe (was 100, lowered to 90)
             
             if let h = height, h > 0 {
-                // If height is known, rely on Aspect Ratio
-                // Reject banners (> 2.5) or tall spacers (< 0.33)
-                // Accept square/portrait/landscape products (e.g. Hero images 600x600)
+                // Check Aspect Ratio
                 let ratio = Double(w) / Double(h)
-                if ratio > 2.5 || ratio < 0.33 { return false }
-            } else {
-                // Missing height? Only reject if it's clearly a massive banner
-                // Most product thumbnails without height are small.
-                // Hero images usually have height.
-                if w > 350 { return false }
+                if ratio > 2.0 || ratio < 0.4 { return false } // Allow slightly wider/taller, but reject banners
             }
         }
         
