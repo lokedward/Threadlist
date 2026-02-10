@@ -172,6 +172,7 @@ class EmailOnboardingService: ObservableObject {
             return [] // No messages found
         }
         
+        print("✅ Found \(messageRefs.count) email(s) matching query")
         print("📧 Found \(messageRefs.count) emails matching order confirmations")
         
         // Step 2: Fetch full message details for each ID
@@ -265,12 +266,19 @@ class EmailOnboardingService: ObservableObject {
     }
     
     private func buildGmailQuery(for range: TimeRange) -> String {
-        // Focus on shipped/delivered confirmations (highest likelihood of kept items)
-        let subjectFilter = "subject:(\"shipped\" OR \"delivered\" OR \"delivery confirmation\" OR \"shipment\")"
-        let fromFilter = "from:(amazon OR nike OR zara OR shop OR store OR order)"
+        // Broad query to catch order confirmations in various formats
+        // Including forwarded emails which may have different subject patterns
         let timeFilter = range.gmailTimeFilter
         
-        return "\(subjectFilter) \(fromFilter) \(timeFilter)"
+        // Search for common order-related keywords in subject
+        // Much broader than before to catch forwarded emails and various retailers
+        let query = """
+        subject:(order OR shipped OR delivered OR delivery OR shipment OR confirmation OR receipt OR invoice OR "thank you for your purchase")
+        \(timeFilter)
+        """
+        
+        print("📧 Gmail Query: \(query)")
+        return query
     }
     
     // MARK: - Email Parsing
