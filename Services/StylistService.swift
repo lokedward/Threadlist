@@ -122,8 +122,8 @@ class StylistService {
             if let category = item.category?.name.lowercased() {
                 desc += "\(category)"
             }
-            if !item.brand.isEmpty {
-                desc += " by \(item.brand)"
+            if let brand = item.brand, !brand.isEmpty {
+                desc += " by \(brand)"
             }
             if !item.name.isEmpty {
                 desc += " (\(item.name))"
