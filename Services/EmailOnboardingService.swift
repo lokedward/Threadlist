@@ -279,8 +279,13 @@ class EmailOnboardingService: ObservableObject {
         var allProducts: [ProductData] = []
         
         for (index, email) in emails.enumerated() {
+            // Determine retailer for progress message
+            let retailer = detectRetailer(from: email.from)
+            
             await MainActor.run {
                 progress?.processedEmails = index + 1
+                progress?.currentRetailer = retailer
+                progress?.detailMessage = "Processing \(retailer) order (\(index + 1) of \(emails.count))..."
             }
             
             // Select parser based on sender
@@ -289,10 +294,34 @@ class EmailOnboardingService: ObservableObject {
             // Extract products
             if let products = try? await parser.extractProducts(from: email) {
                 allProducts.append(contentsOf: products)
+                
+                // Update found items count
+                await MainActor.run {
+                    progress?.foundItems = allProducts.count
+                    if !products.isEmpty {
+                        progress?.detailMessage = "Found \(products.count) item\(products.count == 1 ? "" : "s") from \(retailer)"
+                    }
+                }
+                
+                // Small delay so user can see the update
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
             }
         }
         
         return allProducts
+    }
+    
+    private func detectRetailer(from email: String) -> String {
+        let lowercased = email.lowercased()
+        
+        if lowercased.contains("amazon") { return "Amazon" }
+        if lowercased.contains("nike") { return "Nike" }
+        if lowercased.contains("zara") { return "Zara" }
+        if lowercased.contains("nordstrom") { return "Nordstrom" }
+        if lowercased.contains("macys") { return "Macy's" }
+        if lowercased.contains("target") { return "Target" }
+        
+        return "online store"
     }
     
     private func selectParser(for email: GmailMessage) -> EmailParser {
@@ -408,6 +437,9 @@ struct ImportProgress {
     var phase: ImportPhase
     var totalEmails: Int
     var processedEmails: Int
+    var foundItems: Int = 0
+    var currentRetailer: String?
+    var detailMessage: String?
     
     var percentComplete: Double {
         guard totalEmails > 0 else { return 0 }

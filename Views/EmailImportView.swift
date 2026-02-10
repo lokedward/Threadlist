@@ -141,24 +141,50 @@ struct EmailImportView: View {
             Spacer()
             
             // Progress indicator
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 ProgressView()
                     .scaleEffect(1.5)
                     .tint(PoshTheme.Colors.primaryAccentStart)
                 
                 if let progress = service.progress {
+                    // Main phase text
                     Text(progress.phase.displayText)
                         .font(PoshTheme.Typography.headline(size: 18))
                         .foregroundColor(PoshTheme.Colors.headline)
                     
-                    if progress.totalEmails > 0 {
-                        Text("\(progress.processedEmails) of \(progress.totalEmails) emails")
+                    // Detail message (retailer being processed)
+                    if let detailMessage = progress.detailMessage {
+                        Text(detailMessage)
                             .font(.system(size: 14))
-                            .foregroundColor(PoshTheme.Colors.body)
-                        
+                            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    
+                    if progress.totalEmails > 0 {
+                        // Progress bar
                         ProgressView(value: progress.percentComplete)
                             .tint(PoshTheme.Colors.primaryAccentStart)
                             .frame(width: 200)
+                        
+                        // Email count
+                        Text("\(progress.processedEmails) of \(progress.totalEmails) emails")
+                            .font(.system(size: 13))
+                            .foregroundColor(PoshTheme.Colors.body)
+                        
+                        // Found items count
+                        if progress.foundItems > 0 {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                    .font(.system(size: 12))
+                                
+                                Text("Found \(progress.foundItems) item\(progress.foundItems == 1 ? "" : "s")")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(.green)
+                            }
+                            .padding(.top, 4)
+                        }
                     }
                 }
             }
