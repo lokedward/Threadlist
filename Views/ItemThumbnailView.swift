@@ -26,7 +26,7 @@ struct ItemThumbnailView: View {
         ZStack(alignment: .bottomLeading) {
             // Image Container
             Rectangle()
-                .fill(PoshTheme.Colors.secondaryAccent.opacity(0.05))
+                .fill(PoshTheme.Colors.ink.opacity(0.05))
                 .aspectRatio(1, contentMode: .fill)
                 .overlay {
                     if let image = image {
@@ -36,7 +36,7 @@ struct ItemThumbnailView: View {
                     } else {
                         Image(systemName: "handbag")
                             .font(.system(size: 30, weight: .ultraLight))
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.3))
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
                     }
                 }
                 .clipped()
@@ -50,7 +50,7 @@ struct ItemThumbnailView: View {
                             Text(brand.uppercased())
                                 .font(.system(size: 8, weight: .bold))
                                 .tracking(1)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.7))
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
                                 .lineLimit(1)
                         }
                         
@@ -61,7 +61,7 @@ struct ItemThumbnailView: View {
                     }
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(PoshTheme.Colors.cardBackground.opacity(0.85))
+                    .background(Color.white.opacity(0.85))
                     .background(.ultraThinMaterial)
                 }
                 .clipped()

@@ -13,7 +13,7 @@ struct PoshDetailRow: View {
             Text(label)
                 .font(.system(size: 10, weight: .bold))
                 .tracking(1)
-                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
             
             Spacer()
             

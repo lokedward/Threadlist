@@ -47,7 +47,7 @@ struct EmptyClosetView: View {
             
             Image(systemName: "tshirt")
                 .font(.system(size: 64, weight: .thin))
-                .foregroundColor(PoshTheme.Colors.uiInk.opacity(0.3))
+                .foregroundColor(PoshTheme.Colors.primaryInk.opacity(0.3))
             
             Text("Your closet is empty")
                 .poshHeadline(size: 20)

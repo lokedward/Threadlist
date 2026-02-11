@@ -60,7 +60,7 @@ struct SearchView: View {
     
     var body: some View {
         ZStack {
-            PoshTheme.Colors.background.ignoresSafeArea()
+            PoshTheme.Colors.canvas.ignoresSafeArea()
             
             VStack(spacing: 0) {
                 filterBar
@@ -93,7 +93,7 @@ struct SearchView: View {
             Text("\(filteredItems.count) ITEMS")
                 .font(.system(size: 9, weight: .bold))
                 .tracking(1)
-                .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
+                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
@@ -123,8 +123,8 @@ struct SearchView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(PoshTheme.Colors.cardBackground)
-            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+            .background(Color.white)
+            .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
             .clipShape(Capsule())
             .shadow(color: .black.opacity(0.05), radius: 3)
         }
@@ -169,12 +169,12 @@ struct SearchView: View {
             .padding(.vertical, 8)
             .background {
                 if filterCategory != nil {
-                    PoshTheme.Colors.primaryGradient
+                    PoshTheme.Colors.ink
                 } else {
-                    PoshTheme.Colors.cardBackground
+                    Color.white
                 }
             }
-            .foregroundColor(filterCategory != nil ? .white : PoshTheme.Colors.secondaryAccent)
+            .foregroundColor(filterCategory != nil ? .white : PoshTheme.Colors.ink.opacity(0.8))
             .clipShape(Capsule())
             .shadow(color: .black.opacity(0.05), radius: 3)
         }
@@ -186,13 +186,13 @@ struct SearchView: View {
             
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40, weight: .ultraLight))
-                .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.3))
+                .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
             
             VStack(spacing: 8) {
                 Text(searchText.isEmpty ? "CLEAN SLATE" : "NO MATCHES FOUND")
                     .font(.system(size: 12, weight: .bold))
                     .tracking(2)
-                    .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                 
                 Text(searchText.isEmpty ? "Start typing to explore your collection" : "Try refining your search terms")
                     .poshBody(size: 14)

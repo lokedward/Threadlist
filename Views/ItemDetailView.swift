@@ -37,7 +37,7 @@ struct ItemDetailView: View {
     
     var body: some View {
         ZStack {
-            PoshTheme.Colors.background.ignoresSafeArea()
+            PoshTheme.Colors.canvas.ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 24) {
@@ -66,7 +66,7 @@ struct ItemDetailView: View {
                                     }
                                 }
                         } else {
-                            PoshTheme.Colors.cardBackground
+                            Color.white
                                 .aspectRatio(1, contentMode: .fit)
                                 .poshCard()
                                 .overlay {

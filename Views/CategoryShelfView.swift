@@ -20,10 +20,10 @@ struct CategoryShelfView: View {
                 
                 Text("\(category.items.count)")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
+                    .foregroundColor(PoshTheme.Colors.primaryInk.opacity(0.8))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(PoshTheme.Colors.ink.opacity(0.1))
+                    .background(PoshTheme.Colors.primaryInk.opacity(0.1))
                     .clipShape(Capsule())
                 
                 Spacer()
@@ -33,12 +33,12 @@ struct CategoryShelfView: View {
                 } label: {
                     Text("See All")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(PoshTheme.Colors.ink)
+                        .foregroundColor(PoshTheme.Colors.primaryInk)
                         .padding(.vertical, 4)
                         .padding(.horizontal, 12)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .stroke(PoshTheme.Colors.ink.opacity(0.1), lineWidth: 1)
+                                .stroke(PoshTheme.Colors.primaryInk.opacity(0.1), lineWidth: 1)
                         )
                 }
             }

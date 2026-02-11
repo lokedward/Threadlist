@@ -48,7 +48,7 @@ struct EmailImportView: View {
             // Icon
             Image(systemName: "envelope.fill")
                 .font(.system(size: 60))
-                .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                .foregroundColor(PoshTheme.Colors.ink)
             
             // Title
             Text("Import from Gmail")
@@ -120,7 +120,7 @@ struct EmailImportView: View {
             } label: {
                 Text("Prefer not to connect? Upload manually instead")
                     .font(.system(size: 13))
-                    .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
             }
             .padding(.bottom, 8)
             
@@ -132,7 +132,7 @@ struct EmailImportView: View {
             .foregroundColor(PoshTheme.Colors.body)
             .padding(.bottom, 32)
         }
-        .background(PoshTheme.Colors.background)
+        .background(PoshTheme.Colors.canvas)
     }
     
     // MARK: - Processing View
@@ -145,7 +145,7 @@ struct EmailImportView: View {
             VStack(spacing: 20) {
                 ProgressView()
                     .scaleEffect(1.5)
-                    .tint(PoshTheme.Colors.primaryAccentStart)
+                    .tint(PoshTheme.Colors.ink)
                 
                 if let progress = service.progress {
                     // Main phase text
@@ -157,7 +157,7 @@ struct EmailImportView: View {
                     if let detailMessage = progress.detailMessage {
                         Text(detailMessage)
                             .font(.system(size: 14))
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
                     }
@@ -165,7 +165,7 @@ struct EmailImportView: View {
                     if progress.totalEmails > 0 {
                         // Progress bar
                         ProgressView(value: progress.percentComplete)
-                            .tint(PoshTheme.Colors.primaryAccentStart)
+                            .tint(PoshTheme.Colors.ink)
                             .frame(width: 200)
                         
                         // Email count
@@ -199,7 +199,7 @@ struct EmailImportView: View {
                 .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(PoshTheme.Colors.background)
+        .background(PoshTheme.Colors.canvas)
     }
     
     // MARK: - Review Screen
@@ -227,7 +227,7 @@ struct EmailImportView: View {
                 HStack(alignment: .top, spacing: 12) {
                     Text("\(index + 1).")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                         .frame(width: 24, alignment: .trailing)
                     
                     VStack(alignment: .leading, spacing: 4) {
@@ -238,7 +238,7 @@ struct EmailImportView: View {
                         if let brand = item.brand {
                             Text(brand)
                                 .font(.system(size: 12))
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                         }
                     }
                 }
@@ -246,7 +246,7 @@ struct EmailImportView: View {
                 .padding(.vertical, 8)
             }
             .listStyle(.plain)
-            .background(PoshTheme.Colors.background)
+            .background(PoshTheme.Colors.canvas)
             
             // Actions
             VStack(spacing: 16) {
@@ -258,7 +258,7 @@ struct EmailImportView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(PoshTheme.Colors.primaryAccentStart)
+                        .background(PoshTheme.Colors.ink)
                         .cornerRadius(12)
                 }
                 
@@ -272,7 +272,7 @@ struct EmailImportView: View {
             .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(PoshTheme.Colors.background)
+        .background(PoshTheme.Colors.canvas)
         .fullScreenCover(isPresented: $showingBulkAddFlow, onDismiss: { dismiss() }) {
             AddItemView(prefilledItems: importedItems)
         }
@@ -306,7 +306,7 @@ struct EmailFeatureRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                .foregroundColor(PoshTheme.Colors.ink)
                 .frame(width: 24)
             
             Text(text)
@@ -334,7 +334,7 @@ struct TimeRangeOption: View {
                     if isPremium {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                            .foregroundColor(PoshTheme.Colors.ink)
                     }
                     
                     if isLocked {
@@ -353,17 +353,17 @@ struct TimeRangeOption: View {
             
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                    .foregroundColor(PoshTheme.Colors.ink)
             }
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? PoshTheme.Colors.primaryAccentStart.opacity(0.1) : PoshTheme.Colors.cardBackground)
+                .fill(isSelected ? PoshTheme.Colors.ink.opacity(0.1) : Color.white)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? PoshTheme.Colors.primaryAccentStart : Color.clear, lineWidth: 2)
+                .stroke(isSelected ? PoshTheme.Colors.ink : Color.clear, lineWidth: 2)
         )
     }
 }

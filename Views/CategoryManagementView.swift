@@ -17,7 +17,7 @@ struct CategoryManagementView: View {
     
     var body: some View {
         ZStack {
-            PoshTheme.Colors.background.ignoresSafeArea()
+            PoshTheme.Colors.canvas.ignoresSafeArea()
             
             List {
                 Section {
@@ -31,9 +31,9 @@ struct CategoryManagementView: View {
                             Text("\(category.items.count) items")
                                 .font(.system(size: 11, weight: .bold))
                                 .tracking(1)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                         }
-                        .listRowBackground(PoshTheme.Colors.cardBackground)
+                        .listRowBackground(Color.white)
                         .contentShape(Rectangle())
                         .contextMenu {
                             Button {
@@ -82,14 +82,14 @@ struct CategoryManagementView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .light))
-                        .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                        .foregroundColor(PoshTheme.Colors.ink)
                 }
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
             }
         }
         .alert("Add Category", isPresented: $showingAddCategory) {

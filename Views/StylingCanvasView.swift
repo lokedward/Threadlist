@@ -18,7 +18,7 @@ struct StylingCanvasView: View {
         ZStack {
             // Background gradient
             RadialGradient(
-                colors: [PoshTheme.Colors.primaryAccentEnd.opacity(0.05), .clear],
+                colors: [PoshTheme.Colors.ink.opacity(0.05), .clear],
                 center: .center,
                 startRadius: 0,
                 endRadius: 400
@@ -45,7 +45,7 @@ struct StylingCanvasView: View {
                         }
                         .font(.system(size: 12, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                        .foregroundColor(PoshTheme.Colors.ink)
                     }
                     .padding(.bottom)
                 }
@@ -54,28 +54,28 @@ struct StylingCanvasView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 40, weight: .ultraLight))
-                        .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                        .foregroundColor(PoshTheme.Colors.ink)
                     
                     Text("SELECT PIECES TO START STYLING")
                         .font(.system(size: 10, weight: .bold))
                         .tracking(2)
-                        .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                 }
             } else if isGenerating {
                 // Loading state
                 VStack(spacing: 20) {
                     ProgressView()
                         .scaleEffect(1.5)
-                        .tint(PoshTheme.Colors.primaryAccentStart)
+                        .tint(PoshTheme.Colors.ink)
                     
                     Text("GENERATING YOUR LOOK...")
                         .font(.system(size: 12, weight: .bold))
                         .tracking(2)
-                        .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                     
                     Text(stylistService.userTier == .free ? "Using free tier (SDXL)" : "Using premium quality")
                         .poshBody(size: 12)
-                        .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                 }
                 .padding()
                 .background(.ultraThinMaterial)
@@ -91,7 +91,7 @@ struct StylingCanvasView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(height: 350)
-                        .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.1))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.1))
                     
                     Spacer()
                     
@@ -99,7 +99,7 @@ struct StylingCanvasView: View {
                     if let remaining = stylistService.generationsRemaining {
                         Text("\(remaining) free generations remaining this month")
                             .poshBody(size: 12)
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.7))
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
                             .padding(.bottom, 8)
                     }
                     
@@ -198,7 +198,7 @@ struct UpgradePromptView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PoshTheme.Colors.background.ignoresSafeArea()
+                PoshTheme.Colors.canvas.ignoresSafeArea()
                 
                 VStack(spacing: 32) {
                     Spacer()
@@ -206,7 +206,7 @@ struct UpgradePromptView: View {
                     // Icon
                     Image(systemName: "crown.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                        .foregroundColor(PoshTheme.Colors.ink)
                     
                     // Title
                     VStack(spacing: 12) {
@@ -216,7 +216,7 @@ struct UpgradePromptView: View {
                         
                         Text("Unlimited AI-Generated Looks")
                             .poshBody(size: 16)
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                     }
                     
                     // Features
@@ -227,7 +227,7 @@ struct UpgradePromptView: View {
                         FeatureRow(icon: "bolt.fill", text: "Priority processing")
                     }
                     .padding()
-                    .background(PoshTheme.Colors.cardBackground)
+                    .background(Color.white)
                     .cornerRadius(16)
                     .poshCard()
                     .padding(.horizontal, 24)
@@ -256,7 +256,7 @@ struct UpgradePromptView: View {
                             dismiss()
                         }
                         .poshBody(size: 14)
-                        .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                     }
                     .padding(.bottom, 32)
                 }
@@ -268,7 +268,7 @@ struct UpgradePromptView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                            .foregroundColor(PoshTheme.Colors.ink)
                     }
                 }
             }
@@ -284,7 +284,7 @@ struct FeatureRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                .foregroundColor(PoshTheme.Colors.ink)
                 .frame(width: 24)
             
             Text(text)

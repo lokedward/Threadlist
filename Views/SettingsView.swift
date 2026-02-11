@@ -24,7 +24,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PoshTheme.Colors.background.ignoresSafeArea()
+                PoshTheme.Colors.canvas.ignoresSafeArea()
                 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -33,7 +33,7 @@ struct SettingsView: View {
                             Text("ORGANIZATION")
                                 .font(.system(size: 10, weight: .bold))
                                 .tracking(1)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                             
                             NavigationLink {
                                 CategoryManagementView()
@@ -45,10 +45,10 @@ struct SettingsView: View {
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                                 }
                                 .padding()
-                                .background(PoshTheme.Colors.cardBackground)
+                                .background(Color.white)
                                 .cornerRadius(12)
                             }
                             .buttonStyle(.plain)
@@ -64,10 +64,10 @@ struct SettingsView: View {
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                                 }
                                 .padding()
-                                .background(PoshTheme.Colors.cardBackground)
+                                .background(Color.white)
                                 .cornerRadius(12)
                             }
                             .buttonStyle(.plain)
@@ -82,14 +82,14 @@ struct SettingsView: View {
                             Text("ARCHIVE STATISTICS")
                                 .font(.system(size: 10, weight: .bold))
                                 .tracking(1)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                             
                             VStack(spacing: 12) {
                                 PoshDetailRow(label: "TOTAL GARMENTS", value: "\(allItems.count)")
                                 PoshDetailRow(label: "COLLECTIONS", value: "\(allCategories.count)")
                             }
                             .padding()
-                            .background(PoshTheme.Colors.cardBackground)
+                            .background(Color.white)
                             .cornerRadius(12)
                         }
                         .padding(.horizontal)
@@ -99,7 +99,7 @@ struct SettingsView: View {
                             Text("DATA & PRIVACY")
                                 .font(.system(size: 10, weight: .bold))
                                 .tracking(1)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                             
                             VStack(spacing: 0) {
                                 Button {
@@ -128,7 +128,7 @@ struct SettingsView: View {
                                     .padding()
                                 }
                             }
-                            .background(PoshTheme.Colors.cardBackground)
+                            .background(Color.white)
                             .cornerRadius(12)
                         }
                         .padding(.horizontal)
@@ -138,10 +138,10 @@ struct SettingsView: View {
                             Text("THREADLIST")
                                 .font(.system(size: 12, weight: .bold))
                                 .tracking(3)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                             Text("VERSION 1.0.0")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.6))
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                         }
                         .padding(.top, 40)
                     }
@@ -156,7 +156,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("DONE") { dismiss() }
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                        .foregroundColor(PoshTheme.Colors.ink)
                 }
             }
             .alert("Clear All Data?", isPresented: $showingClearConfirmation) {

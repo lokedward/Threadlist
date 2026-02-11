@@ -19,7 +19,7 @@ struct CategoryGridView: View {
     
     var body: some View {
         ZStack {
-            PoshTheme.Colors.background.ignoresSafeArea()
+            PoshTheme.Colors.canvas.ignoresSafeArea()
             
             ScrollView {
                 if sortedItems.isEmpty {
@@ -28,13 +28,13 @@ struct CategoryGridView: View {
                         
                         Image(systemName: "handbag")
                             .font(.system(size: 60, weight: .ultraLight))
-                            .foregroundColor(PoshTheme.Colors.secondaryAccent.opacity(0.3))
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
                         
                         VStack(spacing: 8) {
                             Text("ARCHIVE EMPTY")
                                 .font(.system(size: 14, weight: .bold))
                                 .tracking(3)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                             
                             Text("No items curated in \(category.name.uppercased()) yet.")
                                 .poshBody(size: 14)
