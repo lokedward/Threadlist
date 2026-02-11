@@ -193,6 +193,9 @@ struct AddItemView: View {
         let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
         guard let image = currentImage, let category = selectedCategory else { return }
         
+        // Dismiss keyboard
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        
         isSaving = true
         let tags = tagsText.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         
@@ -323,6 +326,7 @@ struct MainFormView: View {
                     }
                     .padding(20).padding(.bottom, 40)
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: name) { _, newValue in
                     // Only scroll to top if the form was just reset (name cleared in Single mode)
                     if newValue.isEmpty && additionMode == .single && !isSaving {
