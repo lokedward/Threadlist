@@ -16,7 +16,8 @@ struct ContentView: View {
         // 2.2. Style the Tab Bar
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground() // Translucent/Transparent
-        appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.8)
+        appearance.backgroundColor = UIColor(white: 1.0, alpha: 0.8) // Fixed White
+
         appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial) // Frosted glass effect
         
         // Remove top border/shadow for a cleaner look
@@ -106,6 +107,8 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $showingAddItem) {
             AddItemView()
         }
+        }
+        .preferredColorScheme(.light) // Enforce Light Mode globally
     }
 }
 

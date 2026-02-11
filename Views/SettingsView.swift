@@ -7,9 +7,11 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
+    // Removed colorScheme environment
+
     
-    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .system
+    // Removed AppearanceMode AppStorage
+
     
     @State private var showingClearConfirmation = false
     @State private var showingExportSheet = false
@@ -72,31 +74,8 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Appearance Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("APPEARANCE")
-                                .font(.system(size: 10, weight: .bold))
-                                .tracking(1)
-                                .foregroundColor(PoshTheme.Colors.secondaryAccent)
-                            
-                            HStack {
-                                Text("SYSTEM THEME")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .tracking(1)
-                                Spacer()
-                                Picker("", selection: $appearanceMode) {
-                                    ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                                        Text(mode.rawValue.uppercased()).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 200)
-                            }
-                            .padding()
-                            .background(PoshTheme.Colors.cardBackground)
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
+                        // Appearance Section Removed
+
                         
                         // Stats Section
                         VStack(alignment: .leading, spacing: 16) {
@@ -197,9 +176,7 @@ struct SettingsView: View {
                 EmailImportView(userTier: .free) // TODO: Use actual user tier
             }
         }
-        .preferredColorScheme(appearanceMode.colorScheme)
-        .poshHeadline(size: 16) // Reset some base text defaults if needed
-        .preferredColorScheme(appearanceMode.colorScheme)
+
     }
     
     private func exportData() {
@@ -264,19 +241,8 @@ struct SettingsView: View {
     }
 }
 
-enum AppearanceMode: String, CaseIterable {
-    case system = "System"
-    case light = "Light"
-    case dark = "Dark"
-    
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
-        }
-    }
-}
+// AppearanceMode enum removed
+
 
 // Share sheet for exporting
 struct ShareSheet: UIViewControllerRepresentable {
