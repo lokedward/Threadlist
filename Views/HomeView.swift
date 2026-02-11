@@ -13,7 +13,7 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Persistent Branding Header with subtle tint
-            PoshHeader(title: "WARDROBE")
+            PoshHeader()
                 .padding(.vertical, 20)
                 .frame(maxWidth: .infinity)
                 .background(PoshTheme.Colors.stone) // Subtle "Stone" tint for depth

@@ -92,7 +92,7 @@ struct CropView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("CONFIRM") { handleDone() }
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(PoshTheme.Colors.primaryAccentStart)
+                        .foregroundColor(PoshTheme.Colors.canvas)
                 }
             }
             .toolbarBackground(.black, for: .navigationBar)
