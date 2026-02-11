@@ -87,6 +87,9 @@ struct CropView: View {
                     .onAppear {
                         configureLayout(in: geometry.size)
                     }
+                    .onChange(of: geometry.size) { _, newSize in
+                        configureLayout(in: newSize)
+                    }
                 }
             }
             .navigationTitle("Position & Scale")
@@ -110,7 +113,7 @@ struct CropView: View {
                         }
                     }
                     .fontWeight(.bold)
-                    .foregroundColor(PoshTheme.Colors.primaryAccentStart) // Using your PoshTheme
+                    .foregroundColor(PoshTheme.Colors.ink) // High contrast for dark editor
                 }
             }
             .toolbarColorScheme(.dark, for: .navigationBar)
