@@ -102,7 +102,7 @@ struct ContentView: View {
             }
             .tag(3)
         }
-        .accentColor(PoshTheme.Colors.ink) // Selected color
+        .tint(Color(white: 0.1)) // Selected color
         .fullScreenCover(isPresented: $showingAddItem) {
             AddItemView()
         }
