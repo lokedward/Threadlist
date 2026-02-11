@@ -23,8 +23,18 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .bottom) {
                 PoshTheme.Colors.canvas.ignoresSafeArea()
+                
+                // Subtle Background Branding
+                Image("brand_logo")
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 80)
+                    .foregroundColor(PoshTheme.Colors.ink)
+                    .opacity(0.03) // Very subtle watermark effect
+                    .padding(.bottom, 40)
                 
                 ScrollView {
                     VStack(spacing: 24) {

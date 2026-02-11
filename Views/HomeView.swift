@@ -11,37 +11,28 @@ struct HomeView: View {
     @Binding var showingAddItem: Bool
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Persistent Branding Header with subtle tint
-            PoshHeader(title:"")
-                .padding(.vertical, 20)
-                .frame(maxWidth: .infinity)
-                .background(PoshTheme.Colors.stone) // Subtle "Stone" tint for depth
-                .overlay(Rectangle().frame(height: 0.5).foregroundColor(PoshTheme.Colors.border), alignment: .bottom)
-            
-            ZStack(alignment: .bottomTrailing) {
-                if categories.isEmpty {
-                    EmptyClosetView()
-                } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 24) {
-                            ForEach(categories) { category in
-                                if !category.items.isEmpty {
-                                    CategoryShelfView(category: category)
-                                }
-                            }
-                            
-                            // Show empty state if all categories are empty
-                            if categories.allSatisfy({ $0.items.isEmpty }) {
-                                EmptyClosetView()
+        ZStack(alignment: .bottomTrailing) {
+            if categories.isEmpty {
+                EmptyClosetView()
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 24) {
+                        ForEach(categories) { category in
+                            if !category.items.isEmpty {
+                                CategoryShelfView(category: category)
                             }
                         }
-                        .padding(.vertical)
+                        
+                        // Show empty state if all categories are empty
+                        if categories.allSatisfy({ $0.items.isEmpty }) {
+                            EmptyClosetView()
+                        }
                     }
-                    .refreshable {
-                        // Simulate a refresh delay to show the spinning animation
-                        try? await Task.sleep(nanoseconds: 800_000_000)
-                    }
+                    .padding(.vertical)
+                }
+                .refreshable {
+                    // Simulate a refresh delay to show the spinning animation
+                    try? await Task.sleep(nanoseconds: 800_000_000)
                 }
             }
         }
