@@ -10,10 +10,10 @@ struct PoshTheme {
     
     struct Colors {
         // Quiet Luxury Palette
-        static let canvas: Color = Color(white: 0.99) // Off-White/Paper
-        static let ink: Color = Color(white: 0.1)     // Soft Black
-        static let stone: Color = Color(white: 0.95)  // Subtle Cards
-        static let accent: Color = Color(red: 0.16, green: 0.20, blue: 0.25) // Muted Midnight
+        static let canvas: Color = Color(white: 0.99) // The Paper Background
+        static let ink: Color = Color(white: 0.1)     // Soft Black (Editorial Text)
+        static let stone: Color = Color(white: 0.96)  // Subtle Card backgrounds
+        static let border: Color = Color.black.opacity(0.08) // Tactile hairline borders
         
         static let uiInk: UIColor = UIColor(white: 0.1, alpha: 1.0)
         static let uiCanvas: UIColor = UIColor(white: 0.99, alpha: 1.0)
@@ -27,6 +27,7 @@ struct PoshTheme {
     
     struct Typography {
         static func headline(size: CGFloat) -> Font {
+            // Editorial signature: System regular with specific kerning in modifier
             .system(size: size, weight: .regular, design: .default)
         }
         
@@ -42,23 +43,25 @@ struct PoshCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(Color.white)
-            .cornerRadius(4) // Minimal
+            .cornerRadius(0) // Sharp editorial corners
             .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.black.opacity(0.08), lineWidth: 1) // Tactile stroke
+                Rectangle()
+                    .stroke(PoshTheme.Colors.border, lineWidth: 1) // Sharp 1px border
             )
+            .shadow(color: .clear, radius: 0) // Remove any legacy floating shadows
     }
 }
 
 struct PoshButtonModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .font(.system(size: 16, weight: .semibold))
+            .font(.system(size: 14, weight: .bold)) // Slightly smaller, sharper text
+            .tracking(2) // Signiture luxury tracking
             .foregroundColor(.white)
             .padding(.vertical, 16)
             .padding(.horizontal, 24)
             .background(PoshTheme.Colors.ink) // Solid ink
-            .cornerRadius(4) // Minimal
+            .cornerRadius(0) // Sharp corners
             .simultaneousGesture(TapGesture().onEnded { _ in
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
