@@ -88,12 +88,6 @@ struct AddItemView: View {
                 ToolbarItem(placement: .principal) {
                     Text(additionMode == .single ? "New Item" : "Bulk Upload").poshHeadline(size: 18)
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .poshBody(size: 16)
-                        .foregroundColor(PoshTheme.Colors.ink)
-
-                }
             }
             // Modifiers decoupled here
             .modifier(AddItemPickerModifiers(
@@ -130,7 +124,9 @@ struct AddItemView: View {
                 }
             }
             .alert("SUCCESS", isPresented: $showingSaveAlert) {
-                Button("OK", role: .cancel) { }
+                Button("OK", role: .cancel) { 
+                    // Manual reset of scroll position is handled via the form view's internal logic or state
+                }
             } message: {
                 Text("Your item has been added to the wardrobe.")
             }
@@ -269,57 +265,76 @@ struct MainFormView: View {
     var body: some View {
         ZStack {
             PoshTheme.Colors.canvas.ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 24) {
-                    Picker("Mode", selection: $additionMode) {
-                        ForEach(AddItemView.AdditionMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented).padding(.horizontal, 40)
-                    
-                    if additionMode == .multiple && bulkImageQueue.isEmpty {
-                        BulkEmptyStateView(onOpenGallery: onOpenBulkGallery)
-                    } else {
-                        VStack(spacing: 24) {
-                            ImageSectionView(
-                                image: additionMode == .single ? selectedImage : bulkImageQueue.first,
-                                showChangeButton: additionMode == .single,
-                                onTrigger: onAddPhoto
-                            ).equatable()
-                            
-                            if additionMode == .multiple {
-                                let currentItemIndex = totalBulkItems - (itemsRemaining ?? bulkImageQueue.count) + 1
-                                Text("ITEM \(currentItemIndex) OF \(totalBulkItems)")
-                                    .font(.system(size: 10, weight: .bold)).tracking(2)
-                                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
-
-                            }
-                            
-                            DetailsSectionView(
-                                name: $name, category: $selectedCategory, brand: $brand,
-                                size: $size, tagsText: $tagsText, isExpanded: $isMetadataExpanded,
-                                showExpandButton: additionMode == .multiple, categories: categories
-                            )
-                            
-                            Button(action: onSave) {
-                                Text(isSaving ? "SAVING..." : (additionMode == .single ? "SAVE TO CLOSET" : (bulkImageQueue.count > 1 ? "SAVE & NEXT" : "SAVE & FINISH")))
-                                    .tracking(2).frame(maxWidth: .infinity)
-                            }
-                            .poshButton()
-                            .disabled(isSaving)
-                            
-                            if let onSkip = onSkip {
-                                Button(action: onSkip) {
-                                    Text("SKIP THIS ITEM")
-                                        .font(.system(size: 12, weight: .bold)).tracking(2)
-                                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 24) {
+                        Color.clear.frame(height: 1).id("form_top")
+                        
+                        Picker("Mode", selection: $additionMode) {
+                            ForEach(AddItemView.AdditionMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
+                        .pickerStyle(.segmented).padding(.horizontal, 40)
+                        
+                        if additionMode == .multiple && bulkImageQueue.isEmpty {
+                            BulkEmptyStateView(onOpenGallery: onOpenBulkGallery)
+                        } else {
+                            VStack(spacing: 24) {
+                                ImageSectionView(
+                                    image: additionMode == .single ? selectedImage : bulkImageQueue.first,
+                                    showChangeButton: additionMode == .single,
+                                    onTrigger: onAddPhoto
+                                ).equatable()
+                                
+                                if additionMode == .multiple {
+                                    let currentItemIndex = totalBulkItems - (itemsRemaining ?? bulkImageQueue.count) + 1
+                                    Text("ITEM \(currentItemIndex) OF \(totalBulkItems)")
+                                        .font(.system(size: 10, weight: .bold)).tracking(2)
+                                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
 
                                 }
-                                .padding(.top, 8)
+                                
+                                DetailsSectionView(
+                                    name: $name, category: $selectedCategory, brand: $brand,
+                                    size: $size, tagsText: $tagsText, isExpanded: $isMetadataExpanded,
+                                    showExpandButton: additionMode == .multiple, categories: categories
+                                )
+                                
+                                Button(action: {
+                                    onSave()
+                                    // Give a tiny delay for saving to begin, then scroll if alert shows
+                                }) {
+                                    Text(isSaving ? "SAVING..." : (additionMode == .single ? "SAVE TO CLOSET" : (bulkImageQueue.count > 1 ? "SAVE & NEXT" : "SAVE & FINISH")))
+                                        .tracking(2).frame(maxWidth: .infinity)
+                                }
+                                .poshButton()
+                                .disabled(isSaving)
+                                
+                                if let onSkip = onSkip {
+                                    Button(action: onSkip) {
+                                        Text("SKIP THIS ITEM")
+                                            .font(.system(size: 12, weight: .bold)).tracking(2)
+                                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
+
+                                    }
+                                    .padding(.top, 8)
+                                }
                             }
                         }
                     }
+                    .padding(20).padding(.bottom, 40)
                 }
-                .padding(20).padding(.bottom, 40)
+                .onChange(of: name) { _, newValue in
+                    // If name becomes empty after being set (from resetForm), scroll to top
+                    if newValue.isEmpty && additionMode == .single {
+                        withAnimation { proxy.scrollTo("form_top", anchor: .top) }
+                    }
+                }
+                .onChange(of: bulkImageQueue.count) { _, newValue in
+                    // Also scroll for bulk transitions
+                    if additionMode == .multiple {
+                        withAnimation { proxy.scrollTo("form_top", anchor: .top) }
+                    }
+                }
             }
         }
     }
