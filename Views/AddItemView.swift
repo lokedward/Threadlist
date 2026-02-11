@@ -208,9 +208,9 @@ struct AddItemView: View {
                 )
                 await MainActor.run {
                     isSaving = false
-                    showingSaveAlert = true
                     
                     if additionMode == .single {
+                        showingSaveAlert = true
                         resetForm()
                     } else {
                         bulkImageQueue.removeFirst()
