@@ -52,7 +52,7 @@ struct EmailImportView: View {
             
             // Title
             Text("Import from Gmail")
-                .font(PoshTheme.Typography.headline(size: 24))
+                .font(PoshTheme.Typography.headlineFont(size: 24))
                 .foregroundColor(PoshTheme.Colors.headline)
             
             // Description
@@ -150,7 +150,7 @@ struct EmailImportView: View {
                 if let progress = service.progress {
                     // Main phase text
                     Text(progress.phase.displayText)
-                        .font(PoshTheme.Typography.headline(size: 18))
+                        .font(PoshTheme.Typography.headlineFont(size: 18))
                         .foregroundColor(PoshTheme.Colors.headline)
                     
                     // Detail message (retailer being processed)
@@ -216,7 +216,7 @@ struct EmailImportView: View {
                     .padding(.top, 20)
                 
                 Text("Found \(importedItems.count) items")
-                    .font(PoshTheme.Typography.headline(size: 24))
+                    .font(PoshTheme.Typography.headlineFont(size: 24))
                     .foregroundColor(PoshTheme.Colors.headline)
             }
             .padding(.bottom, 10)

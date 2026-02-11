@@ -8,41 +8,45 @@ struct PoshTheme {
     // MARK: - Colors
     
     struct Colors {
-        // Backgrounds
-        static let background = Color(red: 0.98, green: 0.977, blue: 0.965)
-        static let cardBackground = Color.white
+        // Quiet Luxury Palette
+        static let canvas = Color(white: 0.99) // Off-White/Paper
+        static let ink = Color(white: 0.1)     // Soft Black
+        static let stone = Color(white: 0.95)  // Subtle Cards
+        static let accent = Color(red: 0.16, green: 0.20, blue: 0.25) // Muted Midnight
         
-        // Accents - Primary (Champagne/Gold)
-        static let primaryAccentStart = Color(red: 0.83, green: 0.68, blue: 0.21) // Champagne
-        static let primaryAccentEnd = Color(red: 0.91, green: 0.82, blue: 0.48)
+        // Deprecated / Mapped to new theme
+        static let background = canvas
+        static let cardBackground = Color.white
+        static let primaryAccentStart = accent
+        static let primaryAccentEnd = accent
         
         static var primaryGradient: LinearGradient {
-            LinearGradient(colors: [primaryAccentStart, primaryAccentEnd], 
+            // Flat gradient for backward compatibility
+            LinearGradient(colors: [accent, accent], 
                           startPoint: .topLeading, 
                           endPoint: .bottomTrailing)
         }
         
-        // Secondary Accents
-        static let secondaryAccent = Color(red: 0.85, green: 0.75, blue: 0.65)
+        static let secondaryAccent = ink.opacity(0.5)
         
         // Text
-        static let headline = Color(red: 0.18, green: 0.14, blue: 0.12)
-        static let body = Color(red: 0.36, green: 0.33, blue: 0.31)
+        static let headline = ink
+        static let body = ink.opacity(0.8)
         
-        // Shadows
+        // Shadows (Deprecated/ Subtle)
         static var cardShadow: Color {
-            Color.black.opacity(0.08)
+            Color.clear // Removed shadow
         }
     }
     
     // MARK: - Typography
     
     struct Typography {
-        static func headline(size: CGFloat) -> Font {
-            .system(size: size, weight: .semibold, design: .serif)
+        static func headlineFont(size: CGFloat) -> Font {
+            .system(size: size, weight: .regular, design: .default)
         }
         
-        static func body(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        static func bodyFont(size: CGFloat, weight: Font.Weight = .light) -> Font {
             .system(size: size, weight: weight, design: .default)
         }
     }
@@ -54,16 +58,10 @@ struct PoshCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(PoshTheme.Colors.cardBackground)
-            .cornerRadius(16)
-            .shadow(
-                color: PoshTheme.Colors.cardShadow,
-                radius: 10,
-                x: 0,
-                y: 5
-            )
+            .cornerRadius(4) // Minimal
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(PoshTheme.Colors.secondaryAccent.opacity(0.2), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color.black.opacity(0.08), lineWidth: 1) // Tactile stroke
             )
     }
 }
@@ -75,9 +73,12 @@ struct PoshButtonModifier: ViewModifier {
             .foregroundColor(.white)
             .padding(.vertical, 16)
             .padding(.horizontal, 24)
-            .background(PoshTheme.Colors.primaryGradient)
-            .cornerRadius(30)
-            .shadow(color: PoshTheme.Colors.primaryAccentStart.opacity(0.3), radius: 8, x: 0, y: 4)
+            .background(PoshTheme.Colors.ink) // Solid ink
+            .cornerRadius(4) // Minimal
+            .simultaneousGesture(TapGesture().onEnded { _ in
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+            })
     }
 }
 
@@ -91,12 +92,14 @@ extension View {
     }
     
     func poshHeadline(size: CGFloat = 24) -> some View {
-        self.font(PoshTheme.Typography.headline(size: size))
+        self.font(PoshTheme.Typography.headlineFont(size: size))
+            .textCase(.uppercase)
+            .kerning(2.0)
             .foregroundColor(PoshTheme.Colors.headline)
     }
     
-    func poshBody(size: CGFloat = 16, weight: Font.Weight = .regular) -> some View {
-        self.font(PoshTheme.Typography.body(size: size, weight: weight))
+    func poshBody(size: CGFloat = 16, weight: Font.Weight = .light) -> some View {
+        self.font(PoshTheme.Typography.bodyFont(size: size, weight: weight))
             .foregroundColor(PoshTheme.Colors.body)
     }
 }
