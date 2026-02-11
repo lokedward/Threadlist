@@ -49,6 +49,7 @@ struct AddItemView: View {
     @State private var isMetadataExpanded = true
     @State private var emailItemsQueue: [EmailProductItem] = []
     @State private var isLoadingEmailImage = false
+    @State private var showingSaveAlert = false
     
     var canSave: Bool {
         let hasImage = additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty
@@ -128,6 +129,11 @@ struct AddItemView: View {
                     selectedCategory = categories.first 
                 }
             }
+            .alert("SUCCESS", isPresented: $showingSaveAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Your item has been added to the wardrobe.")
+            }
         }
     }
     
@@ -176,6 +182,16 @@ struct AddItemView: View {
             loadNextEmailItem()
         }
     }
+    
+    private func resetForm() {
+        selectedImage = nil
+        selectedPhotoItem = nil
+        name = ""
+        brand = ""
+        size = ""
+        tagsText = ""
+        selectedCategory = categories.first
+    }
 
     private func saveItem() {
         let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
@@ -193,8 +209,10 @@ struct AddItemView: View {
                 )
                 await MainActor.run {
                     isSaving = false
+                    showingSaveAlert = true
+                    
                     if additionMode == .single {
-                        dismiss()
+                        resetForm()
                     } else {
                         bulkImageQueue.removeFirst()
                         
@@ -204,8 +222,15 @@ struct AddItemView: View {
                             loadNextEmailItem()
                         } else {
                             name = ""
+                            brand = ""
+                            size = ""
+                            tagsText = ""
+                            // Keep category as is for bulk speed? Or reset?
                             withAnimation { isMetadataExpanded = false }
-                            if bulkImageQueue.isEmpty { dismiss() }
+                            if bulkImageQueue.isEmpty {
+                                additionMode = .single
+                                resetForm()
+                            }
                         }
                     }
                 }
