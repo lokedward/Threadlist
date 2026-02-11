@@ -751,12 +751,8 @@ class ClothingDetector {
     static func isLikelyProductImage(url: String, alt: String?, width: Int? = nil, height: Int? = nil) -> Bool {
         let lowerUrl = url.lowercased()
         
-        // 1. Keyword Blocklist (Expanded)
-        // frequent banner/marketing terms
-        let urlBlocklist = [
-            "logo", "icon", "social", "footer", "header", "nav", "tracking", "pixel", "button", "arrow", "star", "rating", "spacer",
-            "banner", "hero", "promo", "marketing", "transparent", "divider"
-        ]
+        // 1. Keyword Blocklist
+        let urlBlocklist = ["logo", "icon", "social", "footer", "header", "nav", "tracking", "pixel", "button", "arrow", "star", "rating", "spacer"]
         if urlBlocklist.contains(where: { lowerUrl.contains($0) }) { return false }
         
         // 2. Brand Identity Check (The Logo Killer)
@@ -768,22 +764,17 @@ class ClothingDetector {
 
         // 3. Dimension Logic (Safe Mode)
         if let w = width {
-            // Allow small thumbnails, but reject tiny icons
-            if w < 50 { return false }
+            // Allow small thumbnails (e.g. 112px)
+            if w < 90 { return false }
             
             if let h = height, h > 0 {
-                if h < 50 { return false }
-                
+                if h < 90 { return false }
                 let ratio = Double(w) / Double(h)
                 // Reject extremely wide (banners) or tall (spacers)
-                // Typical product images are 0.6 to 1.5. Banners are usually > 2.0
-                if ratio > 2.0 || ratio < 0.33 { return false }
+                if ratio > 2.5 || ratio < 0.33 { return false }
             } else {
-                // Missing height?
-                // If width is very large (> 500) and we don't know height, it's risky (likely a hero banner).
-                // Unless the alt text is VERY specific (handled by caller score).
-                // We'll be conservative here.
-                if w > 500 { return false }
+                // Missing height? Only reject if it's clearly a massive banner
+                if w > 600 { return false }
             }
         }
         
@@ -872,28 +863,21 @@ class GenericEmailParser: EmailParser {
                     continue
                 }
                 
-                // Context Extraction (Tighter window: +/- 200 chars)
-                let context = extractNearbyText(from: html, around: tagRange, offset: 200)
-                
-                // Clean Name Logic
-                var productName = cleanProductName(altText)
-                
-                // FALLBACK: If alt text is empty or generic, try to find a name in the context
-                // (Fixes Lululemon headers/banners or images without alt)
-                if productName.isEmpty {
-                    if let extractedName = extractNameFromContext(context) {
-                        productName = extractedName
-                    }
-                }
-                
-                // Final check on name emptiness
+                // Clean Name
+                let productName = cleanProductName(altText)
                 guard !productName.isEmpty else { continue }
                 
                 // 2. Score Calculation
                 var score = 0
                 
                 // Base structure requirement: Image + Price nearby
+                // Check context (+/- 500 chars) for price
+                let context = extractNearbyText(from: html, around: tagRange)
                 let hasPrice = hasPricePattern(context)
+                
+                // STRICT RULE: If unknown brand AND no clothing keyword, MUST have price
+                // Actually, user said "Price anchored block".
+                // We'll give points for price.
                 
                 if hasPrice {
                     score += 10 // Baseline for valid structure
@@ -912,18 +896,16 @@ class GenericEmailParser: EmailParser {
                 }
                 
                 // Size/Qty clues in context (heuristic)
-                // Look for "Qty" specifically, or "Size:"
-                if context.localizedCaseInsensitiveContains("Qty") || 
-                   context.localizedCaseInsensitiveContains("Quantity") ||
-                   context.localizedCaseInsensitiveContains("Size:") {
+                if context.localizedCaseInsensitiveContains("Qty") || context.localizedCaseInsensitiveContains("Quantity") {
                     score += 20
                 }
                 
                 // Check context for negative signals
-                if context.localizedCaseInsensitiveContains("Subtotal") {
-                     // "Subtotal" usually appears at the bottom. 
-                     // If it's VERY close, it might be the order summary block, not an item.
-                     // But we rely on name detection mostly.
+                if context.localizedCaseInsensitiveContains("Shipping") || context.localizedCaseInsensitiveContains("Subtotal") {
+                    // Only penalize if very close? Or if it's the KEY content?
+                    // E.g. "Shipping $5.00" might look like a product.
+                    // If name is "Shipping", isBlacklisted handles it.
+                    // If context has "Shipping", it might be an item list header. Ignored.
                 }
 
                 // Filtering Decision
@@ -951,38 +933,6 @@ class GenericEmailParser: EmailParser {
         
         // Sort descending by score
         return candidates.sorted { $0.score > $1.score }
-    }
-    
-    private func extractNameFromContext(_ context: String) -> String? {
-        // Simple heuristic: Look for text inside <a> tags or just distinct text lines
-        // nearby the image.
-        
-        // Regex for link text: <a[^>]*>([^<]+)</a>
-        // This handles the Lululemon case: <a ...>Align Pant II 25"</a>
-        let linkPattern = #"<a[^>]*>([^<]+)</a>"#
-        
-        if let regex = try? NSRegularExpression(pattern: linkPattern, options: .caseInsensitive) {
-            let matches = regex.matches(in: context, range: NSRange(context.startIndex..., in: context))
-            
-            for match in matches {
-                if match.numberOfRanges >= 2,
-                   let range = Range(match.range(at: 1), in: context) {
-                    let text = String(context[range])
-                    let cleaned = cleanProductName(text)
-                    
-                    if !cleaned.isEmpty && 
-                       !ClothingDetector.isBlacklisted(cleaned) &&
-                       !ClothingDetector.isBrandName(cleaned) &&
-                       !hasPricePattern(cleaned) { // Don't use price as name
-                        return cleaned
-                    }
-                }
-            }
-        }
-        
-        // If no links, maybe try to find a standalone text block?
-        // Risky without more structure. We'll stick to links for now as a safe fallback.
-        return nil
     }
     
     // MARK: - Gold Zone Cropping
@@ -1048,13 +998,13 @@ class GenericEmailParser: EmailParser {
         return nil
     }
     
-    private func extractNearbyText(from html: String, around range: Range<String.Index>, offset: Int = 300) -> String {
-        // Extract +/- offset chars
+    private func extractNearbyText(from html: String, around range: Range<String.Index>) -> String {
+        // Extract +/- 300 chars
         let startOffset = html.distance(from: html.startIndex, to: range.lowerBound)
         let endOffset = html.distance(from: html.startIndex, to: range.upperBound)
         
-        let start = max(0, startOffset - offset)
-        let end = min(html.count, endOffset + offset)
+        let start = max(0, startOffset - 300)
+        let end = min(html.count, endOffset + 300)
         
         let startIndex = html.index(html.startIndex, offsetBy: start)
         let endIndex = html.index(html.startIndex, offsetBy: end)
@@ -1081,11 +1031,6 @@ class GenericEmailParser: EmailParser {
             if cleaned.lowercased() == noise {
                 return ""
             }
-        }
-        
-        // Length check: Products shouldn't be massive sentences
-        if cleaned.count > 100 {
-            return ""
         }
         
         return cleaned
