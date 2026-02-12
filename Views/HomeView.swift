@@ -13,15 +13,13 @@ struct HomeView: View {
         ZStack(alignment: .bottomTrailing) {
             PoshTheme.Colors.canvas.ignoresSafeArea()
             
-            if categories.isEmpty || categories.allSatisfy({ $0.items.isEmpty }) {
+            if categories.isEmpty {
                 WelcomeOnboardingView()
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(categories) { category in
-                            if !category.items.isEmpty {
-                                CategoryShelfView(category: category)
-                            }
+                            CategoryShelfView(category: category)
                         }
                     }
                     .padding(.vertical)

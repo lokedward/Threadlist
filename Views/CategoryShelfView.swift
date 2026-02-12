@@ -44,21 +44,49 @@ struct CategoryShelfView: View {
             }
             .padding(.horizontal)
             
-            // Horizontal scroll of items
+            // Horizontal scroll of items or Shadow Placeholders
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 12) {
-                    ForEach(sortedItems) { item in
-                        NavigationLink {
-                            ItemDetailView(item: item)
-                        } label: {
-                            ItemThumbnailView(item: item)
+                    if sortedItems.isEmpty {
+                        // Shadow Shelves for empty categories
+                        ForEach(0..<3) { _ in
+                            ShadowPlaceholderCard()
                                 .frame(width: 140)
+                                .opacity(0.6)
                         }
-                        .buttonStyle(.plain)
+                    } else {
+                        ForEach(sortedItems) { item in
+                            NavigationLink {
+                                ItemDetailView(item: item)
+                            } label: {
+                                ItemThumbnailView(item: item)
+                                    .frame(width: 140)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
                 .padding(.horizontal)
             }
+        }
+    }
+}
+
+// Reusable Shadow Placeholder for empty states
+struct ShadowPlaceholderCard: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "plus")
+                .font(.system(size: 20, weight: .thin))
+                .foregroundColor(PoshTheme.Colors.ink.opacity(0.1))
+                .frame(width: 140, height: 180)
+                .background(PoshTheme.Colors.stone.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.05))
+                )
         }
     }
 }
