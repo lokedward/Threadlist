@@ -135,6 +135,13 @@ class StylistService {
             ]
         ]
         
+        // If we expect an image, try to force it via generationConfig
+        if responseType == .image {
+            requestBody["generationConfig"] = [
+                "response_mime_type": "image/jpeg"
+            ]
+        }
+        
         // Note: Gemini 2.0 Flash generates images natively when prompted.
         // We do NOT use response_mime_type = "image/jpeg" because that field is for the overall response wrapper (text/json/etc).
         // The image will be returned as a part within the 'inline_data' multimodal response.
@@ -165,6 +172,11 @@ class StylistService {
                 print("❌ Failed to parse JSON. Raw response: \(rawString)")
             }
             throw StylistError.invalidResponse
+        }
+        
+        // DEBUG: Log the full response to help diagnose missing image data
+        if let dataString = String(data: data, encoding: .utf8) {
+            print("💎 RAW GEMINI RESPONSE: \(dataString)")
         }
         
         guard let candidates = json["candidates"] as? [[String: Any]],
