@@ -59,7 +59,15 @@ struct AddItemView: View {
     var skipAction: (() -> Void)? {
         guard additionMode == .multiple else { return nil }
         if !emailItemsQueue.isEmpty || !bulkImageQueue.isEmpty {
-            return skipCurrentItem
+            return { skipCurrentItem() }
+        }
+        return nil
+    }
+    
+    var cancelAction: (() -> Void)? {
+        guard additionMode == .multiple else { return nil }
+        if !emailItemsQueue.isEmpty || !bulkImageQueue.isEmpty {
+            return { cancelReview() }
         }
         return nil
     }
@@ -82,10 +90,10 @@ struct AddItemView: View {
                 categories: categories,
                 onAddPhoto: { showingImageSourcePicker = true },
                 onOpenBulkGallery: { showingBulkPhotoPicker = true },
-                onSave: saveItem,
+                onSave: { saveItem() },
                 onCropComplete: { img in selectedImage = img },
                 onSkip: skipAction,
-                onCancel: (additionMode == .multiple && (!bulkImageQueue.isEmpty || !emailItemsQueue.isEmpty)) ? cancelReview : nil
+                onCancel: cancelAction
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
