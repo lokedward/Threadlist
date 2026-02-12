@@ -15,6 +15,7 @@ struct PoshTheme {
         static let stone: Color = Color(white: 0.96)  // Card Backgrounds
         static let border: Color = Color.black.opacity(0.08) // Hairlines
         static let error: Color = Color(red: 0.8, green: 0.2, blue: 0.2).opacity(0.8) // Muted Red
+        static let gold: Color = Color(red: 0.83, green: 0.68, blue: 0.21) // Muted Champagne Gold
         
         static let uiInk: UIColor = UIColor(white: 0.12, alpha: 1.0)
         static let uiCanvas: UIColor = UIColor(white: 0.99, alpha: 1.0)
