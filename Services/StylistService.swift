@@ -95,8 +95,8 @@ class StylistService {
     private enum ResponseType { case text, image }
     
     private func callGemini(prompt: String, images: [Data]?, responseType: ResponseType) async throws -> String {
-        // Use the experimental flash model which supports image generation
-        let model = "gemini-2.5-flash"
+        // Use the latest flash model which supports image generation
+        let model = "gemini-2.5-flash-image"
         let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(AppConfig.googleAPIKey)"
         
         guard let url = URL(string: urlString) else { throw StylistError.invalidEndpoint }
@@ -130,7 +130,7 @@ class StylistService {
             ]
         ]
         
-        // Note: Gemini 2.0 Flash (Experimental) generates images natively when prompted.
+        // Note: Gemini 2.0 Flash generates images natively when prompted.
         // We do NOT use response_mime_type = "image/jpeg" because that field is for the overall response wrapper (text/json/etc).
         // The image will be returned as a part within the 'inline_data' multimodal response.
         
@@ -195,6 +195,14 @@ class StylistService {
                let b64 = inlineData["data"] as? String {
                 return b64
             }
+            
+            // Debugging: If no image, what did we get?
+            if let text = firstPart["text"] as? String {
+                print("⚠️ Expected Image, but got Text: \(text)")
+                // If the model refuses, it usually explains why in the text.
+                throw StylistError.apiError("Generation refused: \(text)")
+            }
+            
             throw StylistError.apiError("No image data returned")
         }
     }
