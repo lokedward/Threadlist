@@ -17,6 +17,9 @@ final class ClothingItem {
     @Relationship(inverse: \Category.items)
     var category: Category?
     
+    // Many-to-many relationship with Outfits
+    var outfits: [Outfit] = []
+    
     init(
         id: UUID = UUID(),
         name: String,

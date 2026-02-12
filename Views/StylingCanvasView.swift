@@ -4,6 +4,7 @@
 import SwiftUI
 
 struct StylingCanvasView: View {
+    @Environment(\.modelContext) private var modelContext
     let selectedItems: [ClothingItem]
     let gender: Gender
     
@@ -40,17 +41,43 @@ struct StylingCanvasView: View {
                         .padding(.bottom, 8)
                     
                     // Regenerate button
-                    Button {
-                        generatedImage = nil
-                    } label: {
-                        HStack {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                            Text("TRY DIFFERENT LOOK")
+                    HStack(spacing: 16) {
+                        Button {
+                            generatedImage = nil
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 20))
+                                Text("RETRY")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .tracking(1.5)
+                            }
+                            .foregroundColor(PoshTheme.Colors.ink)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
+                            .poshCard()
                         }
-                        .font(.system(size: 12, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(PoshTheme.Colors.ink)
+                        
+                        Button {
+                            saveOutfit()
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "heart")
+                                    .font(.system(size: 20))
+                                Text("SAVE LOOK")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .tracking(1.5)
+                            }
+                            .foregroundColor(Color.white) // Use direct white
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(PoshTheme.Colors.ink)
+                            .cornerRadius(0) // Posh style
+                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        }
                     }
+                    .padding(.horizontal)
                     .padding(.bottom)
                 }
             } else if selectedItems.isEmpty {
@@ -191,6 +218,25 @@ struct StylingCanvasView: View {
                     withAnimation {
                         errorMessage = error.localizedDescription
                     }
+                }
+            }
+        }
+        }
+    }
+    
+    private func saveOutfit() {
+        guard let image = generatedImage else { return }
+        
+        Task {
+            // Save image to disk
+            if let imageID = ImageStorageService.shared.saveImage(image) {
+                // Create Outfit
+                let outfit = Outfit(generatedImageID: imageID, items: selectedItems)
+                modelContext.insert(outfit)
+                
+                await MainActor.run {
+                    generatedImage = nil
+                    // Ideally show success toast
                 }
             }
         }
