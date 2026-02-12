@@ -63,16 +63,16 @@ struct ContentView: View {
                 }
                 .tag(1)
             
-            // Tab 3: Atelier
+            // Tab 3: Studio
             NavigationStack {
                 StylistView()
-                    .navigationTitle("Atelier")
+                    .navigationTitle("Studio")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar(.hidden, for: .navigationBar)
             }
             .tabItem {
                 Image(systemName: "sparkles")
-                Text("Atelier")
+                Text("Studio")
             }
             .tag(2)
             

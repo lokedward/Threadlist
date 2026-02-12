@@ -11,8 +11,10 @@ struct HomeView: View {
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            if categories.isEmpty {
-                EmptyClosetView()
+            PoshTheme.Colors.canvas.ignoresSafeArea()
+            
+            if categories.isEmpty || categories.allSatisfy({ $0.items.isEmpty }) {
+                WelcomeOnboardingView()
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
@@ -21,45 +23,32 @@ struct HomeView: View {
                                 CategoryShelfView(category: category)
                             }
                         }
-                        
-                        // Show empty state if all categories are empty
-                        if categories.allSatisfy({ $0.items.isEmpty }) {
-                            EmptyClosetView()
-                        }
                     }
                     .padding(.vertical)
                 }
                 .refreshable {
-                    // Simulate a refresh delay to show the spinning animation
                     try? await Task.sleep(nanoseconds: 800_000_000)
                 }
             }
+            
+            // Floating Action Button
+            NavigationLink {
+                AddItemView()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 24, weight: .light))
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(PoshTheme.Colors.ink)
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+            }
+            .padding(24)
         }
     }
 }
 
-struct EmptyClosetView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            
-            Image(systemName: "tshirt")
-                .font(.system(size: 64, weight: .thin))
-                .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
-            
-            Text("Your closet is empty")
-                .poshHeadline(size: 20)
-            
-            Text("Tap the + button to add your first item")
-                .poshBody(size: 14)
-                .opacity(0.7)
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-    }
-}
+// Memory-retained EmptyClosetView removed in favor of WelcomeOnboardingView
 
 #Preview {
     NavigationStack {
