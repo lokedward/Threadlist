@@ -79,7 +79,7 @@ class StylistService {
         let model = "gemini-2.5-flash-image" 
         
         let fullPrompt = """
-        Generate a photorealistic, full-body editorial fashion photograph of a 5'6" Asian slim \(genderTerm) model.
+        Generate a photorealistic, full-body editorial fashion photograph of a 5'6" Asian slim female model.
         The model is wearing this specific outfit: \(description).
         
         Setting: Neutral grey studio background.
@@ -100,9 +100,8 @@ class StylistService {
     
     private enum ResponseType { case text, image }
     
-    private func callGemini(prompt: String, images: [Data]?, responseType: ResponseType) async throws -> String {
+    private func callGemini(model: String, prompt: String, images: [Data]?, responseType: ResponseType) async throws -> String {
         // Use the latest flash model which supports image generation
-        let model = "gemini-2.5-flash-image"
         let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(AppConfig.googleAPIKey)"
         
         guard let url = URL(string: urlString) else { throw StylistError.invalidEndpoint }
