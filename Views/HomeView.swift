@@ -53,7 +53,7 @@ struct HomeView: View {
                                         .padding(.horizontal, 16)
                                         .background(
                                             RoundedRectangle(cornerRadius: 4)
-                                                .stroke(PoshTheme.Colors.ink.opacity(0.1), lineWidth: 1)
+                                                .stroke(PoshTheme.Colors.gold.opacity(0.5), lineWidth: 1)
                                         )
                                 }
                             }

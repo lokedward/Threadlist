@@ -19,6 +19,7 @@ struct PoshTheme {
         
         static let uiInk: UIColor = UIColor(white: 0.12, alpha: 1.0)
         static let uiCanvas: UIColor = UIColor(white: 0.99, alpha: 1.0)
+        static let uiGold: UIColor = UIColor(red: 0.83, green: 0.68, blue: 0.21, alpha: 1.0)
         
         // Text - Mapped to Ink
         static let headline: Color = ink

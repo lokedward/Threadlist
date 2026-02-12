@@ -44,7 +44,7 @@ struct CategoryShelfView: View {
                     
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
+                        .foregroundColor(PoshTheme.Colors.gold) // Gold accent
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
                 .padding(.horizontal)

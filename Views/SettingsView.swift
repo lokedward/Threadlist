@@ -57,7 +57,7 @@ struct SettingsView: View {
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
+                                        .foregroundColor(PoshTheme.Colors.gold)
                                 }
                                 .padding()
                                 .background(Color.white)
@@ -76,7 +76,7 @@ struct SettingsView: View {
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
+                                        .foregroundColor(PoshTheme.Colors.gold)
                                 }
                                 .padding()
                                 .background(Color.white)

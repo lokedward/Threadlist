@@ -22,15 +22,15 @@ struct ContentView: View {
         
         // Item colors
         // Manually defining UIColors to avoid SwiftUI bridging issues in init
-        let ink = PoshTheme.Colors.uiInk
+        let gold = PoshTheme.Colors.uiGold
         let unselectedInk = PoshTheme.Colors.uiInk.withAlphaComponent(0.3)
         
         let itemAppearance = UITabBarItemAppearance()
         itemAppearance.normal.iconColor = unselectedInk
         itemAppearance.normal.titleTextAttributes = [.foregroundColor: unselectedInk]
         
-        itemAppearance.selected.iconColor = ink
-        itemAppearance.selected.titleTextAttributes = [.foregroundColor: ink]
+        itemAppearance.selected.iconColor = gold
+        itemAppearance.selected.titleTextAttributes = [.foregroundColor: gold]
         
         appearance.stackedLayoutAppearance = itemAppearance
         appearance.inlineLayoutAppearance = itemAppearance
@@ -86,7 +86,7 @@ struct ContentView: View {
             }
             .tag(3)
         }
-        .tint(PoshTheme.Colors.ink) // Selected color
+        .tint(PoshTheme.Colors.gold) // Selected color
         .preferredColorScheme(.light) // Enforce Light Mode globally
     }
 }
