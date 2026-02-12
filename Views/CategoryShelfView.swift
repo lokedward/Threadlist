@@ -48,11 +48,11 @@ struct CategoryShelfView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 12) {
                     if sortedItems.isEmpty {
-                        // Shadow Shelves for empty categories
+                        // Shadow Shelves for empty categories with descriptive emojis
+                        let emoji = placeholderEmoji(for: category.name)
                         ForEach(0..<3) { _ in
-                            ShadowPlaceholderCard()
+                            ShadowPlaceholderCard(emoji: emoji)
                                 .frame(width: 140)
-                                .opacity(0.6)
                         }
                     } else {
                         ForEach(sortedItems) { item in
@@ -70,23 +70,52 @@ struct CategoryShelfView: View {
             }
         }
     }
+    
+    private func placeholderEmoji(for categoryName: String) -> String {
+        let name = categoryName.lowercased()
+        if name.contains("top") || name.contains("shirt") { return "👕" }
+        if name.contains("bottom") || name.contains("denim") || name.contains("pants") { return "👖" }
+        if name.contains("outer") || name.contains("coat") || name.contains("jacket") || name.contains("tailor") { return "🧥" }
+        if name.contains("shoes") || name.contains("sneaker") || name.contains("boots") { return "👟" }
+        if name.contains("bag") || name.contains("handbag") { return "👜" }
+        if name.contains("access") || name.contains("jewelry") { return "💍" }
+        if name.contains("knit") || name.contains("sweater") { return "🧶" }
+        if name.contains("lounge") || name.contains("sleep") { return "🛌" }
+        if name.contains("formal") || name.contains("dress") { return "👗" }
+        if name.contains("suit") { return "👔" }
+        return "✨"
+    }
 }
 
 // Reusable Shadow Placeholder for empty states
 struct ShadowPlaceholderCard: View {
+    let emoji: String
+    
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "plus")
-                .font(.system(size: 20, weight: .thin))
-                .foregroundColor(PoshTheme.Colors.ink.opacity(0.1))
-                .frame(width: 140, height: 180)
-                .background(PoshTheme.Colors.stone.opacity(0.3))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5]))
-                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.05))
-                )
+            ZStack {
+                // Background
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(PoshTheme.Colors.stone.opacity(0.4))
+                
+                // Dash Border
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.1))
+                
+                // Content
+                VStack(spacing: 8) {
+                    Text(emoji)
+                        .font(.system(size: 32))
+                        .grayscale(0.5)
+                        .opacity(0.4)
+                    
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .light))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.2))
+                }
+            }
+            .frame(width: 140, height: 180)
         }
     }
 }
