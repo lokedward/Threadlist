@@ -31,11 +31,11 @@ struct WelcomeOnboardingView: View {
                     
                     // Hero Header
                     VStack(spacing: 8) {
-                        Text("The Digital Studio")
+                        Text("Your Digital Wardrobe")
                             .poshHeadline(size: 32)
                             .multilineTextAlignment(.center)
                         
-                        Text("CURATE YOUR WARDROBE")
+                        Text("BUILD YOUR THREADLIST")
                             .font(.system(size: 10, weight: .bold))
                             .tracking(3)
                             .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
@@ -77,7 +77,7 @@ struct WelcomeOnboardingView: View {
                     } else {
                         // Starter Paths
                         VStack(alignment: .leading, spacing: 24) {
-                            Text("CHOOSE A STARTER PATH")
+                            Text("CHOOSE A FIT")
                                 .font(.system(size: 11, weight: .bold))
                                 .tracking(2)
                                 .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
