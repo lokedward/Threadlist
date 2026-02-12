@@ -1,13 +1,13 @@
-# Threaddit: Digital Studio & Wardrobe
+# Threadlist: Digital Studio & Wardrobe
 
-**Threaddit** is a premium, AI-powered personal wardrobe management application for iOS. Designed with a "High-End Boutique" (Posh) aesthetic, it transforms the way you organize your closet and visualize your personal style.
+**Threadlist** is a premium, AI-powered personal wardrobe management application for iOS. Designed with a "High-End Boutique" (Posh) aesthetic, it transforms the way you organize your closet and visualize your personal style.
 
 ---
 
 ## ✨ Core Features
 
 ### 🏛️ The Studio (AI Stylist)
-The centerpiece of Threaddit. Leverage **Google Gemini 2.5 Flash** to analyze your real clothing items and generate high-fidelity, editorial-style fashion photos.
+The centerpiece of Threadlist. Leverage **Google Gemini 2.5 Flash** to analyze your real clothing items and generate high-fidelity, editorial-style fashion photos.
 - **Visual Intelligence**: Analyzes fabric, texture, color, and fit of selected garments.
 - **Multimodal Generation**: Creates and caches realistic model photos of your specific outfit combinations.
 - **Pinch-to-Zoom**: Examine every detail of your AI-generated looks with intuitive gesture controls.
@@ -67,4 +67,4 @@ A premium first-time experience that eliminates the "blank canvas" problem.
 
 ---
 
-*Threaddit is more than a tracker; it's your personal fashion atelier.*
+*Threadlist is more than a tracker; it's your personal fashion atelier.*
