@@ -26,6 +26,24 @@ struct HomeView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
+                        HStack {
+                            Text("Your Closet")
+                                 .poshHeadline(size: 24)
+                            Spacer()
+                            NavigationLink(destination: SearchView()) {
+                                Text("See All")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(PoshTheme.Colors.ink)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(PoshTheme.Colors.ink.opacity(0.1), lineWidth: 1)
+                                    )
+                            }
+                        }
+                        .padding(.horizontal)
+
                         ForEach(categories) { category in
                             CategoryShelfView(category: category, selectedTab: $selectedTab)
                         }
