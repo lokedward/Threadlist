@@ -46,44 +46,7 @@ struct StylistView: View {
                         
                         Spacer()
                         
-                        // Provider Toggle for Testing
-                        HStack(spacing: 8) {
-                            Text("PROVIDER:")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.5))
-                            
-                            Button {
-                                StylistService.shared.forceProvider = .sdxl
-                            } label: {
-                                Text("SDXL")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(StylistService.shared.forceProvider == .sdxl ? .white : PoshTheme.Colors.ink.opacity(0.5))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(StylistService.shared.forceProvider == .sdxl ? PoshTheme.Colors.ink : Color.clear)
-                                    .cornerRadius(4)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .stroke(PoshTheme.Colors.ink.opacity(0.3), lineWidth: 1)
-                                    )
-                            }
-                            
-                            Button {
-                                StylistService.shared.forceProvider = .imagen
-                            } label: {
-                                Text("IMAGEN")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(StylistService.shared.forceProvider == .imagen ? .white : PoshTheme.Colors.ink.opacity(0.5))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(StylistService.shared.forceProvider == .imagen ? PoshTheme.Colors.ink : Color.clear)
-                                    .cornerRadius(4)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .stroke(PoshTheme.Colors.ink.opacity(0.3), lineWidth: 1)
-                                    )
-                            }
-                        }
+                        Spacer()
                         
                         Button {
                             withAnimation(.spring()) {

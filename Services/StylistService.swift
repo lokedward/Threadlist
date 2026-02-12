@@ -16,13 +16,6 @@ class StylistService {
     @AppStorage("lastResetDate") private var lastResetDate: String = "" // "yyyy-MM-dd"
     @AppStorage("userTier") private var userTierRaw: String = "free"
     
-    // MARK: - Testing Override
-    @Published var forceProvider: AIProvider? = nil 
-    
-    enum AIProvider {
-        case sdxl, imagen
-    }
-    
     var userTier: GenerationTier {
         get { userTierRaw == "premium" ? .premium : .free }
         set { userTierRaw = newValue == .premium ? "premium" : "free" }
@@ -278,30 +271,54 @@ class StylistService {
     // MARK: - API Calls (Stitching Implementation)
     
     private func callStitchingAPI(garments: [UIImage], gender: Gender) async throws -> Data {
-        // Placeholder implementation for Nanobanana / Imagen 3 Stitching
-        // This is where you plug in the Google Vertex AI endpoint or specific production URL
+        // Build URL with API key as query parameter for Generative Language API
+        // or use the standard URL if it's a Vertex AI endpoint
+        let isVertex = AppConfig.imagenEndpoint.contains("aiplatform.googleapis.com")
         
-        guard let url = URL(string: AppConfig.imagenEndpoint) else {
+        var urlComponents = URLComponents(string: AppConfig.imagenEndpoint)
+        if !isVertex {
+            // AI Studio keys usually go in query params
+            urlComponents?.queryItems = [URLQueryItem(name: "key", value: AppConfig.googleAPIKey)]
+        }
+        
+        guard let url = urlComponents?.url else {
             throw StylistError.invalidEndpoint
         }
         
         // Convert garments to Base64 for the API
         let garmentData = garments.compactMap { $0.jpegData(compressionQuality: 0.8)?.base64EncodedString() }
         
-        // Construct Nanobanana-style stitching payload
-        let requestBody: [String: Any] = [
-            "instances": [
-                [
-                    "prompt": "Professional fashion photography of a \(gender == .female ? "female" : "male") model wearing the provided garments in a cohesive outfit. High-end studio lighting, neutral background.",
-                    "garment_images": garmentData, // Custom field for stitching
-                    "model_gender": gender == .female ? "female" : "male"
+        // Construct the payload. 
+        // Note: For "Stitching" (Virtual Try On), the API typically expects a base 'person_image' 
+        // to stitch garments ONTO. Since we don't have a selfie yet, we use a placeholder 
+        // model based on gender.
+        
+        let requestBody: [String: Any]
+        if AppConfig.imagenEndpoint.contains("virtual-try-on") {
+            // Official Virtual Try On Format
+            requestBody = [
+                "instances": [
+                    [
+                        "person_image": ["bytesBase64Encoded": ""], // We need a base model image here
+                        "garment_image": ["bytesBase64Encoded": garmentData.first ?? ""]
+                    ]
                 ]
-            ],
-            "parameters": [
-                "sampleCount": 1,
-                "aspectRatio": "3:4"
             ]
-        ]
+        } else {
+            // standard Imagen 3 format with multi-image signals if supported
+            requestBody = [
+                "instances": [
+                    [
+                        "prompt": "A professional fashion photography shot of a \(gender == .female ? "female" : "male") model wearing these specific items: \(garments.count) separate garments. Photorealistic, 8k, studio lighting.",
+                        "image": ["bytesBase64Encoded": garmentData.first ?? ""] // If using as reference
+                    ]
+                ],
+                "parameters": [
+                    "sampleCount": 1,
+                    "aspectRatio": "3:4"
+                ]
+            ]
+        }
         
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
             throw StylistError.invalidRequest
@@ -310,13 +327,22 @@ class StylistService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(AppConfig.googleAPIKey)", forHTTPHeaderField: "Authorization")
+        
+        if isVertex {
+            // Vertex AI uses Bearer tokens (OAuth)
+            request.setValue("Bearer \(AppConfig.googleAPIKey)", forHTTPHeaderField: "Authorization")
+        }
+        
         request.httpBody = jsonData
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            throw StylistError.apiError("Stitching API failed. Please check your Google Cloud configuration.")
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+            print("❌ API Error \(httpResponse.statusCode)")
+            if let errorString = String(data: data, encoding: .utf8) {
+                print("📝 Response: \(errorString)")
+            }
+            throw StylistError.apiError("Google API returned status \(httpResponse.statusCode). Check your endpoint/key.")
         }
         
         // Parse result (assuming standard Image generation response)
