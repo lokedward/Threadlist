@@ -56,8 +56,11 @@ class StylistService {
     }
     
     // MARK: - Step A: Vision (See the Clothes)
-    
     private func analyzeGarments(images: [Data]) async throws -> String {
+        // 1. Use the STANDARD Flash model for text analysis
+        // This model is optimized for vision-to-text input/output
+        let model = "gemini-2.5-flash" 
+        
         let prompt = """
         Analyze these clothing items images. Create a single, highly detailed visual description suitable for an AI image generator.
         Focus on fabrics, textures, exact colors, necklines, sleeve lengths, and fit.
@@ -65,13 +68,15 @@ class StylistService {
         Ensure the description is cohesive and ready to be used as a prompt for generating an image of a model wearing these exact items.
         """
         
-        return try await callGemini(prompt: prompt, images: images, responseType: .text)
+        // Response Type is .text
+        return try await callGemini(model: model, prompt: prompt, images: images, responseType: .text)
     }
     
     // MARK: - Step B: Generation (Create the Look)
-    
     private func generateImage(description: String, gender: Gender) async throws -> UIImage {
-        let genderTerm = gender == .female ? "female" : "male"
+        // 2. Use the IMAGE specific model for generation
+        // If you use the standard model here, it will just return text!
+        let model = "gemini-2.5-flash-image" 
         
         let fullPrompt = """
         Generate a photorealistic, full-body editorial fashion photograph of a 5'6" Asian slim \(genderTerm) model.
@@ -82,7 +87,8 @@ class StylistService {
         Style: 8k resolution, highly detailed texture, realistic proportions.
         """
         
-        let base64String = try await callGemini(prompt: fullPrompt, images: nil, responseType: .image)
+        // Response Type is .image
+        let base64String = try await callGemini(model: model, prompt: fullPrompt, images: nil, responseType: .image)
         
         guard let data = Data(base64Encoded: base64String), let image = UIImage(data: data) else {
             throw StylistError.invalidImageData
