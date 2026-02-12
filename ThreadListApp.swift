@@ -17,6 +17,20 @@ struct ThreadListApp: App {
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
             
+            // Seed default categories on first launch
+            let context = container.mainContext
+            let descriptor = FetchDescriptor<Category>()
+            let existingCategories = try context.fetch(descriptor)
+            
+            if existingCategories.isEmpty {
+                let defaultCategories = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"]
+                for (index, name) in defaultCategories.enumerated() {
+                    let category = Category(name: name, displayOrder: index)
+                    context.insert(category)
+                }
+                try context.save()
+            }
+            
             return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")

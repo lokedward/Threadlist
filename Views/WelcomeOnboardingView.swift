@@ -3,6 +3,7 @@ import SwiftData
 
 struct WelcomeOnboardingView: View {
     @Environment(\.modelContext) private var modelContext
+    @Binding var hasCompletedOnboarding: Bool
     
     @State private var selectedTemplate: String? = nil
     @State private var pendingCategories: [String] = []
@@ -13,18 +14,31 @@ struct WelcomeOnboardingView: View {
             
             ScrollView {
                 VStack(spacing: 40) {
-                    // Hero Header
-                    VStack(spacing: 8) {
-                        Text("The Digital Studio")
-                            .poshHeadline(size: 32)
-                            .multilineTextAlignment(.center)
+                    // Hero Header + Skip
+                    ZStack(alignment: .topTrailing) {
+                        VStack(spacing: 8) {
+                            Text("The Digital Studio")
+                                .poshHeadline(size: 32)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("CURATE YOUR WARDROBE")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(3)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
+                        }
+                        .frame(maxWidth: .infinity)
                         
-                        Text("CURATE YOUR WARDROBE")
-                            .font(.system(size: 10, weight: .bold))
-                            .tracking(3)
-                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
+                        Button {
+                            withAnimation { hasCompletedOnboarding = true }
+                        } label: {
+                            Text("SKIP")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(1)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+                        }
                     }
-                    .padding(.top, 80)
+                    .padding(.top, 60)
+                    .padding(.horizontal)
                     
                     if let selected = selectedTemplate {
                         // Feedback / Success State
@@ -121,15 +135,24 @@ struct WelcomeOnboardingView: View {
     
     private func finalizeOnboarding() {
         for (index, name) in pendingCategories.enumerated() {
-            let newCat = Category(name: name, displayOrder: index)
-            modelContext.insert(newCat)
+            // Check if category already exists to avoid duplicates
+            let descriptor = FetchDescriptor<Category>(predicate: #Predicate<Category> { $0.name == name })
+            if (try? modelContext.fetch(descriptor))?.isEmpty ?? true {
+                let newCat = Category(name: name, displayOrder: index)
+                modelContext.insert(newCat)
+            }
         }
+        
+        try? modelContext.save()
         
         // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        // At this point, HomeView's Re-evaluation will swap WelcomeOnboardingView out
+        // Mark as completed to switch HomeView
+        withAnimation {
+            hasCompletedOnboarding = true
+        }
     }
 }
 
@@ -182,6 +205,6 @@ struct TemplateRow: View {
 }
 
 #Preview {
-    WelcomeOnboardingView()
+    WelcomeOnboardingView(hasCompletedOnboarding: .constant(false))
         .modelContainer(for: [Category.self], inMemory: true)
 }

@@ -9,12 +9,19 @@ struct HomeView: View {
     @Query(sort: \Category.displayOrder) private var categories: [Category]
     @Binding var searchText: String
     
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    
+    // Computed property to check if the wardrobe is truly empty (no items in any category)
+    private var isWardrobeEmpty: Bool {
+        categories.allSatisfy { $0.items.isEmpty }
+    }
+    
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             PoshTheme.Colors.canvas.ignoresSafeArea()
             
-            if categories.isEmpty {
-                WelcomeOnboardingView()
+            if !hasCompletedOnboarding && isWardrobeEmpty {
+                WelcomeOnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
