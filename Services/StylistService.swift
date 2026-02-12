@@ -234,21 +234,7 @@ class StylistService {
     }
 }
 
-// MARK: - Gemini Codable Types
 
-// MARK: - Gemini Codable Types
-
-private struct GeminiRequest: Codable {
-    let contents: [Content]
-    let safetySettings: [SafetySetting]?
-    let generationConfig: GenerationConfig?
-    
-    enum CodingKeys: String, CodingKey {
-        case contents
-        case safetySettings = "safety_settings"
-        case generationConfig = "generation_config"
-    }
-}
 
 private struct Content: Codable {
     let role: String?
@@ -262,16 +248,64 @@ private struct Part: Codable {
     enum CodingKeys: String, CodingKey {
         case text
         case inlineData = "inline_data"
+        case inlineDataCamel = "inlineData"
+    }
+    
+    init(text: String? = nil, inlineData: InlineData? = nil) {
+        self.text = text
+        self.inlineData = inlineData
+    }
+    
+    // Custom decoding to support both snake_case (API standard) and camelCase (occasional)
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.text = try container.decodeIfPresent(String.self, forKey: .text)
+        
+        if let data = try container.decodeIfPresent(InlineData.self, forKey: .inlineData) {
+            self.inlineData = data
+        } else if let data = try container.decodeIfPresent(InlineData.self, forKey: .inlineDataCamel) {
+            self.inlineData = data
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encodeIfPresent(inlineData, forKey: .inlineData)
     }
 }
 
 private struct InlineData: Codable {
-    let mimeType: String
+    let mimeType: String?
     let data: String
     
     enum CodingKeys: String, CodingKey {
         case mimeType = "mime_type"
+        case mimeTypeCamel = "mimeType"
         case data
+    }
+    
+    init(mimeType: String, data: String) {
+        self.mimeType = mimeType
+        self.data = data
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.data = try container.decode(String.self, forKey: .data)
+        
+        // Try both keys for mime type
+        if let mime = try container.decodeIfPresent(String.self, forKey: .mimeType) {
+            self.mimeType = mime
+        } else {
+            self.mimeType = try container.decodeIfPresent(String.self, forKey: .mimeTypeCamel)
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(data, forKey: .data)
+        try container.encodeIfPresent(mimeType, forKey: .mimeType)
     }
 }
 
