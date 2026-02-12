@@ -62,6 +62,7 @@ class StylistService {
         Analyze these clothing items images. Create a single, highly detailed visual description suitable for an AI image generator.
         Focus on fabrics, textures, exact colors, necklines, sleeve lengths, and fit.
         Do not describe the background, hangers, or any person. Just describe the clothes as if worn together as an outfit.
+        Ensure the description is cohesive and ready to be used as a prompt for generating an image of a model wearing these exact items.
         """
         
         return try await callGemini(prompt: prompt, images: images, responseType: .text)
@@ -73,7 +74,7 @@ class StylistService {
         let genderTerm = gender == .female ? "female" : "male"
         
         let fullPrompt = """
-        Generate a photorealistic, full-body editorial fashion photograph of a 5'6" \(genderTerm) model.
+        Generate a photorealistic, full-body editorial fashion photograph of a 5'6" Asian slim \(genderTerm) model.
         The model is wearing this specific outfit: \(description).
         
         Setting: Neutral grey studio background.
@@ -95,7 +96,7 @@ class StylistService {
     
     private func callGemini(prompt: String, images: [Data]?, responseType: ResponseType) async throws -> String {
         // Use the experimental flash model which supports image generation
-        let model = "gemini-2.0-flash-exp"
+        let model = "gemini-2.5-flash"
         let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(AppConfig.googleAPIKey)"
         
         guard let url = URL(string: urlString) else { throw StylistError.invalidEndpoint }
@@ -177,6 +178,9 @@ class StylistService {
             if let finishReason = firstCandidate["finishReason"] as? String {
                 print("⚠️ Finish Reason: \(finishReason)")
                 if finishReason == "SAFETY" {
+                    if let safetyRatings = firstCandidate["safetyRatings"] as? [[String: Any]] {
+                        print("🛡️ Safety Ratings: \(safetyRatings)")
+                    }
                     throw StylistError.apiError("Generation blocked by safety filters. Try a different outfit.")
                 }
             }
