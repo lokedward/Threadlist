@@ -79,15 +79,15 @@ class StylistService {
         let model = "gemini-2.5-flash-image" 
         
         let fullPrompt = """
-        <IMAGE_GENERATION>
+        <IMAGE_GENERATION_REQUEST>
         Generate a photorealistic, full-body editorial fashion photograph of a 5'6" Asian slim female model.
         The model is wearing this specific outfit: \(description).
         
         Setting: Neutral grey studio background.
         Lighting: Soft, cinematic, professional studio lighting.
         Style: 8k resolution, highly detailed texture, realistic proportions.
-        Output: Return only the generated image data.
-        </IMAGE_GENERATION>
+        Output: You must natively generate the image bytes for this request.
+        </IMAGE_GENERATION_REQUEST>
         """
         
         // Response Type is .image
@@ -139,7 +139,7 @@ class StylistService {
         ]
         
         // If we expect an image, try to force it via generationConfig
-        // ⚠️ Removed "image/jpeg" as it's not a supported response_mime_type for this endpoint
+        // NOTE: We avoid response_mime_type = 'image/jpeg' here as it causes 400 errors.
         if responseType == .image {
             requestBody["generationConfig"] = [
                 "candidate_count": 1
@@ -178,9 +178,24 @@ class StylistService {
             throw StylistError.invalidResponse
         }
         
-        // DEBUG: Log the full response to help diagnose missing image data
-        if let dataString = String(data: data, encoding: .utf8) {
-            print("💎 RAW GEMINI RESPONSE: \(dataString)")
+        // DEBUG: Granular part logging to diagnose 'white space' or truncation
+        if let candidates = json["candidates"] as? [[String: Any]],
+           let firstCandidate = candidates.first,
+           let content = firstCandidate["content"] as? [String: Any],
+           let parts = content["parts"] as? [[String: Any]] {
+            print("💎 Gemini Response Parts Count: \(parts.count)")
+            for (index, part) in parts.enumerated() {
+                if let text = part["text"] as? String {
+                    print("   📦 Part \(index): [Text] (\(text.count) characters)")
+                    if text.count < 500 { print("      Content: \"\(text)\"") }
+                } else if let inlineData = (part["inline_data"] ?? part["inlineData"]) as? [String: Any] {
+                    let mime = (inlineData["mime_type"] ?? inlineData["mimeType"]) as? String ?? "unknown"
+                    let b64 = (inlineData["data"] ?? "") as? String ?? ""
+                    print("   📦 Part \(index): [InlineData] MIME: \(mime), Data: \(b64.count) bytes")
+                } else {
+                    print("   📦 Part \(index): [Unknown] Keys: \(part.keys.joined(separator: ", "))")
+                }
+            }
         }
         
         guard let candidates = json["candidates"] as? [[String: Any]],
@@ -212,18 +227,35 @@ class StylistService {
             let textParts = partsResp.compactMap { $0["text"] as? String }
             return textParts.joined(separator: "\n")
         } else {
-            // Image Generation returns 'inline_data' - search all parts
+            // Search all parts for any image-like data
             for part in partsResp {
-                if let inlineData = part["inline_data"] as? [String: Any],
-                   let b64 = inlineData["data"] as? String {
+                // 1. Check for inline_data (standard)
+                let inlineData = (part["inline_data"] ?? part["inlineData"]) as? [String: Any]
+                if let b64 = inlineData?["data"] as? String {
                     return b64
+                }
+                
+                // 2. Check for file_data (URLs/references)
+                let fileData = (part["file_data"] ?? part["fileData"]) as? [String: Any]
+                if let url = fileData?["file_uri"] ?? fileData?["fileUri"] as? String {
+                    print("🔗 Found image URL in file_data: \(url)")
+                    // Note: If it's a URL, we'd need to download it. For now, log it.
+                }
+                
+                // 3. Check for resultUrls (common in some Gemini image variants)
+                if let resultUrls = part["resultUrls"] as? [String], let firstUrl = resultUrls.first {
+                    print("🔗 Found image URL in resultUrls: \(firstUrl)")
                 }
             }
             
-            // If no image, collect all text for debugging
-            let textOutput = partsResp.compactMap { $0["text"] as? String }.joined(separator: " ")
+            // If no image bytes found, collect all text for debugging
+            let textOutput = partsResp.compactMap { $0["text"] as? String }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
             if !textOutput.isEmpty {
                 print("⚠️ Expected Image, but only got Text: \(textOutput)")
+                // Special case: if it returned a URL in the text?
+                if textOutput.contains("http") && (textOutput.contains(".png") || textOutput.contains(".jpg")) {
+                    print("👀 Text looks like it might contain a URL: \(textOutput)")
+                }
                 throw StylistError.apiError("Generation refused: \(textOutput)")
             }
             
