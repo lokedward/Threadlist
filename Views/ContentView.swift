@@ -44,7 +44,7 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             // Tab 1: Wardrobe
             NavigationStack {
-                HomeView(searchText: $searchText)
+                HomeView(searchText: $searchText, selectedTab: $selectedTab)
                     .navigationTitle("Wardrobe")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar(.hidden, for: .navigationBar)
