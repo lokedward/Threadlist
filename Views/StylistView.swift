@@ -79,7 +79,7 @@ struct StylistView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("AI STYLIST").poshHeadline(size: 18)
+                Text("THE STUDIO").poshHeadline(size: 18)
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {

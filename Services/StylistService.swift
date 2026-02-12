@@ -20,7 +20,7 @@ class StylistService {
     }
     
     var generationsRemaining: Int? {
-        let limit = userTier == .premium ? 50 : 10
+        let limit = userTier == .premium ? 50 : 3
         resetCountIfNeeded()
         return max(0, limit - dailyGenerationCount)
     }

@@ -78,7 +78,7 @@ struct StylingCanvasView: View {
                             .tracking(3)
                             .foregroundColor(PoshTheme.Colors.ink)
                         
-                        Text(stylistService.userTier == .free ? "Using 1 of 10 daily generations" : "Premium quality generation")
+                        Text(stylistService.userTier == .free ? "Using 1 of 3 daily generations" : "Premium quality generation")
                             .font(.system(size: 10, weight: .light))
                             .foregroundColor(PoshTheme.Colors.ink.opacity(0.5))
                     }
