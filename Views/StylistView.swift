@@ -10,7 +10,13 @@ struct StylistView: View {
     
     @State private var selectedItems: Set<UUID> = []
     @State private var showingSelection = true
-    @State private var modelGender: Gender = .female
+    @AppStorage("stylistModelGender") private var genderRaw = "female"
+    @State private var showSettings = false
+    
+    // Computed property to sync local state with AppStorage
+    private var modelGender: Gender {
+        genderRaw == "male" ? .male : .female
+    }
     
     var body: some View {
         ZStack {
@@ -83,14 +89,17 @@ struct StylistView: View {
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button("Female Model") { modelGender = .female }
-                    Button("Male Model") { modelGender = .male }
+                Button {
+                    showSettings.toggle()
                 } label: {
-                    Image(systemName: "person.2")
+                    Image(systemName: "slider.horizontal.3")
                         .foregroundColor(PoshTheme.Colors.ink)
                 }
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            StylistSettingsView()
+                .presentationDetents([.medium])
         }
     }
 }

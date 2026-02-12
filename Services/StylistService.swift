@@ -92,20 +92,34 @@ class StylistService {
         return try await callGemini(model: model, prompt: prompt, images: images, responseType: .text)
     }
     
+    // MARK: - App Storage for Stylist Settings
+    
+    @AppStorage("stylistModelGender") private var genderRaw = "female"
+    @AppStorage("stylistBodyType") private var bodyTypeRaw = ModelBodyType.slim.rawValue
+    @AppStorage("stylistSkinTone") private var skinToneRaw = SkinTone.medium.rawValue
+    @AppStorage("stylistModelHeight") private var heightRaw = ModelHeight.average.rawValue
+    
     private func generateImage(description: String, gender: Gender) async throws -> UIImage {
-        let model = "gemini-2.5-flash-image" 
-        let modelType = gender == .male ? "male" : "female"
+        let model = "gemini-2.5-flash-image"
+        
+        // Retrieve settings
+        let bodyType = ModelBodyType(rawValue: bodyTypeRaw) ?? .slim
+        let skinTone = SkinTone(rawValue: skinToneRaw) ?? .medium
+        let height = ModelHeight(rawValue: heightRaw) ?? .average
+        
+        let genderStr = gender == .male ? "male" : "female"
         
         let fullPrompt = """
         <IMAGE_GENERATION_REQUEST>
-        Editorial neck down fashion photo, 5'6" Asian slim \(modelType) model.
+        Editorial neck down fashion photo.
+        Model: \(height.promptDescription) \(genderStr) model, \(skinTone.promptDescription), \(bodyType.promptDescription).
         Outfit: \(description).
-        Studio lighting, neutral grey background, 8k, highly detailed.
+        Studio lighting, neutral grey background, 8k, highly detailed, photorealistic.
         Output: Raw image bytes.
         </IMAGE_GENERATION_REQUEST>
         """
         
-        print("🎨 [Cost Optimization] Generating with concise prompt...")
+        print("🎨 [Cost Optimization] Generating with settings: \(genderStr), \(bodyType.rawValue), \(skinTone.rawValue), \(height.rawValue)...")
         let base64String = try await callGemini(model: model, prompt: fullPrompt, images: nil, responseType: .image)
         
         guard let data = Data(base64Encoded: base64String), let image = UIImage(data: data) else {

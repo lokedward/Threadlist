@@ -176,7 +176,7 @@ struct StylingCanvasView: View {
             do {
                 let image = try await StylistService.shared.generateModelPhoto(
                     items: selectedItems,
-                    gender: gender == .female ? .female : .male
+                    gender: gender
                 )
                 
                 await MainActor.run {
