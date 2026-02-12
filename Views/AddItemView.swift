@@ -57,8 +57,11 @@ struct AddItemView: View {
     }
     
     var skipAction: (() -> Void)? {
-        if emailItemsQueue.isEmpty { return nil }
-        return skipEmailItem
+        guard additionMode == .multiple else { return nil }
+        if !emailItemsQueue.isEmpty || !bulkImageQueue.isEmpty {
+            return skipCurrentItem
+        }
+        return nil
     }
     
     var body: some View {
@@ -172,10 +175,24 @@ struct AddItemView: View {
         }
     }
     
-    private func skipEmailItem() {
-        if !emailItemsQueue.isEmpty {
-            emailItemsQueue.removeFirst()
-            loadNextEmailItem()
+    private func skipCurrentItem() {
+        withAnimation {
+            if !emailItemsQueue.isEmpty {
+                emailItemsQueue.removeFirst()
+                loadNextEmailItem()
+            } else if !bulkImageQueue.isEmpty {
+                bulkImageQueue.removeFirst()
+                // Reset fields for the next item
+                name = ""
+                brand = ""
+                size = ""
+                tagsText = ""
+                
+                if bulkImageQueue.isEmpty {
+                    additionMode = .single
+                    resetForm()
+                }
+            }
         }
     }
     
@@ -461,8 +478,24 @@ struct BulkEmptyStateView: View {
 struct ProcessingOverlayView: View {
     var body: some View {
         ZStack {
-            Color.black.opacity(0.4).ignoresSafeArea()
-            ProgressView("Processing Image...").padding().background(Material.regular).cornerRadius(10)
+            // Soft dimming that matches our brand colors
+            PoshTheme.Colors.ink.opacity(0.2)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                    .tint(PoshTheme.Colors.ink)
+                
+                Text("PROCESSING GARMENTS")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(3)
+                    .foregroundColor(PoshTheme.Colors.ink)
+            }
+            .padding(.vertical, 40)
+            .padding(.horizontal, 48)
+            .background(Color.white)
+            .poshCard()
         }
     }
 }
