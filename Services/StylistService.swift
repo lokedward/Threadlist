@@ -72,33 +72,49 @@ class StylistService {
         return 0
     }
     
-    // MARK: - AI Generation (Outfit Stitching)
+    // MARK: - AI Generation (Two-Step Pipeline)
     
-    /// Generate a cohesive outfit stitched onto a model using Google's Virtual Try-On logic
+    /// Generate a cohesive outfit photo using Gemini Vision for analysis and Imagen for generation
     func generateModelPhoto(items: [ClothingItem], gender: Gender) async throws -> UIImage {
-        guard items.count >= 2 else {
-            throw StylistError.apiError("Please select 2 or more items to stitch an outfit.")
-        }
+        guard !items.isEmpty else { throw StylistError.noItemsSelected }
         
         // Check usage limits
         if let remaining = generationsRemaining, remaining <= 0 {
             throw StylistError.limitReached
         }
         
-        // Prepare garment images
-        let garmentImages = items.compactMap { item -> UIImage? in
-            ImageStorageService.shared.loadImage(withID: item.imageID)
+        // 1. Prepare Image Data for Vision Analysis
+        var imageParts: [Data] = []
+        for item in items {
+            if let image = ImageStorageService.shared.loadImage(withID: item.imageID),
+               let jpegData = image.jpegData(compressionQuality: 0.8) {
+                imageParts.append(jpegData)
+            }
         }
         
-        guard garmentImages.count == items.count else {
-            throw StylistError.invalidImageData
-        }
+        guard !imageParts.isEmpty else { throw StylistError.invalidImageData }
         
-        // Build the stitching request
-        // Note: For Imagen 3 "Stitching" (Nanobanana), we typically send garments as auxiliary inputs
-        let imageData: Data = try await callStitchingAPI(items: items, gender: gender)
+        // 2. Step 1: Vision Analysis (Gemini 1.5 Pro)
+        let visionPrompt = """
+        Analyze these clothing items. Create a single, highly detailed visual description suitable for an AI image generator. 
+        Focus on specific fabrics, textures, necklines, sleeve lengths, patterns, and fit. 
+        Do not describe the background or any person. Just describe the clothes as if worn together.
+        """
         
-        guard let image = UIImage(data: imageData) else {
+        let garmentDescription = try await callGeminiVision(prompt: visionPrompt, images: imageParts)
+        
+        // 3. Step 2: Image Generation (Imagen 3)
+        let modelDescription = "generic 5'6\" \(gender == .female ? "female" : "male") fashion model"
+        let fullPrompt = """
+        Professional full-body editorial studio photography of a \(modelDescription) wearing: \(garmentDescription).
+        
+        The model is standing in a neutral pose against a soft grey studio background. 
+        Lighting is cinematic and soft. 8k resolution, photorealistic, highly detailed texture.
+        """
+        
+        let generatedImageData = try await callGeminiImagen(prompt: fullPrompt)
+        
+        guard let image = UIImage(data: generatedImageData) else {
             throw StylistError.invalidImageData
         }
         
@@ -106,230 +122,109 @@ class StylistService {
         return image
     }
     
-    // MARK: - Private Helpers
+    // MARK: - Private API Callers
     
-    private func buildPrompt(for items: [ClothingItem], gender: Gender) -> String {
-        let genderTerm = gender == .female ? "female" : "male"
-        let modelDescription = "Professional fashion photography of a \(genderTerm) model wearing"
+    /// Step 1: The Eye (Gemini 1.5 Pro) - Analyzes images to create description
+    private func callGeminiVision(prompt: String, images: [Data]) async throws -> String {
+        let model = "gemini-1.5-pro"
+        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(AppConfig.googleAPIKey)"
+        guard let url = URL(string: urlString) else { throw StylistError.invalidEndpoint }
         
-        // Sort items by layering order for natural description
-        let sortedItems = items.sorted { layeringOrder(for: $0) < layeringOrder(for: $1) }
+        // Construct Multipart Content (Text + Images)
+        var parts: [[String: Any]] = [
+            ["text": prompt]
+        ]
         
-        var clothingDescriptions: [String] = []
-        
-        for item in sortedItems {
-            // Extract color from image
-            let color = extractColorFromItem(item)
-            
-            // Build category description
-            var categoryName = item.category?.name.lowercased() ?? "garment"
-            
-            // Enhanced category naming
-            categoryName = enhanceCategoryName(categoryName)
-            
-            // Detect patterns/graphics from name and tags
-            let details = extractDetailsFromItem(item)
-            
-            // Build full description: [color] [details] [category] [brand/name]
-            var desc = "\(color)"
-            
-            // Add pattern/graphic details if found
-            if !details.isEmpty {
-                desc += " \(details)"
-            }
-            
-            desc += " \(categoryName)"
-            
-            if let brand = item.brand, !brand.isEmpty {
-                desc += " by \(brand)"
-            }
-            
-            // Only add name if it's not redundant with details already captured
-            let nameLower = item.name.lowercased()
-            if !item.name.isEmpty && !nameLower.contains(categoryName) && !details.lowercased().contains(nameLower) {
-                desc += " (\(item.name))"
-            }
-            
-            clothingDescriptions.append(desc)
-        }
-        
-        // Format as bullet list for better SDXL comprehension
-        let clothingList = clothingDescriptions.map { "- \($0)" }.joined(separator: "\n")
-        
-        // Enhanced prompt with detailed photography direction
-        return """
-        \(modelDescription):
-        \(clothingList)
-        
-        Full body close up portrait, 3/4 angle view, neutral grey studio background, soft key lighting with subtle rim light, editorial fashion photography, photorealistic, sharp focus on clothing details, professional studio quality
-        """
-    }
-    
-    private func extractDetailsFromItem(_ item: ClothingItem) -> String {
-        var details: [String] = []
-        
-        // Check name and tags for patterns, graphics, and style details
-        let searchText = (item.name + " " + item.tags.joined(separator: " ")).lowercased()
-        
-        // Graphics/Text
-        if searchText.contains("graphic") {
-            details.append("graphic print")
-        } else if searchText.contains("logo") {
-            details.append("logo detail")
-        } else if searchText.contains("text") || searchText.contains("slogan") {
-            details.append("text print")
-        }
-        
-        // Patterns
-        if searchText.contains("stripe") {
-            details.append("striped")
-        } else if searchText.contains("floral") {
-            details.append("floral pattern")
-        } else if searchText.contains("dot") || searchText.contains("polka") {
-            details.append("polka dot")
-        } else if searchText.contains("check") || searchText.contains("plaid") {
-            details.append("checkered")
-        } else if searchText.contains("animal") || searchText.contains("leopard") || searchText.contains("zebra") {
-            details.append("animal print")
-        } else if searchText.contains("camo") {
-            details.append("camouflage")
-        } else if searchText.contains("tie-dye") || searchText.contains("tie dye") {
-            details.append("tie-dye")
-        }
-        
-        // Textures/Materials
-        if searchText.contains("denim") {
-            details.append("denim")
-        } else if searchText.contains("leather") {
-            details.append("leather")
-        } else if searchText.contains("knit") || searchText.contains("sweater") {
-            details.append("knitted")
-        } else if searchText.contains("silk") || searchText.contains("satin") {
-            details.append("silky")
-        } else if searchText.contains("velvet") {
-            details.append("velvet")
-        }
-        
-        // Fit/Style
-        if searchText.contains("oversized") {
-            details.append("oversized fit")
-        } else if searchText.contains("fitted") || searchText.contains("slim") {
-            details.append("fitted")
-        } else if searchText.contains("loose") || searchText.contains("relaxed") {
-            details.append("relaxed fit")
-        } else if searchText.contains("crop") {
-            details.append("cropped")
-        }
-        
-        // Distressing/Finish
-        if searchText.contains("distress") || searchText.contains("ripped") {
-            details.append("distressed")
-        } else if searchText.contains("vintage") || searchText.contains("worn") {
-            details.append("vintage")
-        }
-        
-        return details.joined(separator: " ")
-    }
-    
-    private func extractColorFromItem(_ item: ClothingItem) -> String {
-        // Load the image and extract color
-        if let image = ImageStorageService.shared.loadImage(withID: item.imageID) {
-            return image.dominantColorName()
-        }
-        return "neutral" // fallback
-    }
-    
-    private func enhanceCategoryName(_ category: String) -> String {
-        // Map generic categories to more specific descriptions
-        let lowercased = category.lowercased()
-        
-        if lowercased.contains("top") || lowercased.contains("shirt") || lowercased == "t-shirt" {
-            return "crew neck t-shirt"
-        } else if lowercased.contains("jean") || lowercased.contains("denim") {
-            return "slim-fit jeans"
-        } else if lowercased.contains("jacket") && !lowercased.contains("leather") {
-            return "jacket"
-        } else if lowercased.contains("dress") {
-            return "midi dress"
-        } else if lowercased.contains("skirt") {
-            return "skirt"
-        } else if lowercased.contains("pant") && !lowercased.contains("jean") {
-            return "trousers"
-        } else if lowercased.contains("shoe") || lowercased.contains("sneaker") {
-            return "shoes"
-        } else if lowercased.contains("boot") {
-            return "boots"
-        } else if lowercased.contains("bag") {
-            return "handbag"
-        } else if lowercased.contains("accessory") || lowercased.contains("hat") {
-            return "accessory"
-        }
-        
-        return category // return original if no match
-    }
-    
-    // MARK: - API Calls (Stitching Implementation)
-    
-    private func callStitchingAPI(items: [ClothingItem], gender: Gender) async throws -> Data {
-        // Build URL with API key as query parameter (AI Studio standard)
-        var urlComponents = URLComponents(string: AppConfig.imagenEndpoint)
-        urlComponents?.queryItems = [URLQueryItem(name: "key", value: AppConfig.googleAPIKey)]
-        
-        guard let url = urlComponents?.url else {
-            throw StylistError.invalidEndpoint
-        }
-        
-        // 🧪 For "stitching" in AI Studio (Imagen 3), we use a rich prompt strategy.
-        let prompt = buildPrompt(for: items, gender: gender)
-        
-        let requestBody: [String: Any] = [
-            "instances": [
-                [
-                    "prompt": prompt
+        for imageData in images {
+            parts.append([
+                "inline_data": [
+                    "mime_type": "image/jpeg",
+                    "data": imageData.base64EncodedString()
                 ]
-            ],
-            "parameters": [
-                "sampleCount": 1,
-                "aspectRatio": "3:4",
-                "personGeneration": "allow" // Important for models
+            ])
+        }
+        
+        let body: [String: Any] = [
+            "contents": [
+                ["parts": parts]
             ]
         ]
         
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
-            throw StylistError.invalidRequest
-        }
-        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // 🛡️ Add Bundle ID header to satisfy Google Cloud restrictions
         if let bundleID = Bundle.main.bundleIdentifier {
             request.setValue(bundleID, forHTTPHeaderField: "X-Ios-Bundle-Identifier")
         }
         
-        request.httpBody = jsonData
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-            print("❌ API Error \(httpResponse.statusCode)")
-            if let errorString = String(data: data, encoding: .utf8) {
-                print("📝 Response Body: \(errorString)")
-            }
-            throw StylistError.apiError("Google AI Studio error: \(httpResponse.statusCode). Please verify your API Key and Imagen 3 access.")
+        guard let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 else {
+            print("Vision Error: \(String(data: data, encoding: .utf8) ?? "Unknown")")
+            throw StylistError.apiError("Vision API Failed: \( (response as? HTTPURLResponse)?.statusCode ?? 0)")
         }
         
-        // Parse result
+        // Parse the text response
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let candidates = json["candidates"] as? [[String: Any]],
+              let content = candidates.first?["content"] as? [String: Any],
+              let partsResponse = content["parts"] as? [[String: Any]],
+              let text = partsResponse.first?["text"] as? String else {
+            throw StylistError.invalidResponse
+        }
+        
+        return text
+    }
+    
+    /// Step 2: The Brush (Imagen 3) - Generates photo from description
+    private func callGeminiImagen(prompt: String) async throws -> Data {
+        let model = "imagen-3.0-generate-001"
+        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):predict?key=\(AppConfig.googleAPIKey)"
+        
+        guard let url = URL(string: urlString) else { throw StylistError.invalidEndpoint }
+        
+        let body: [String: Any] = [
+            "instances": [
+                ["prompt": prompt]
+            ],
+            "parameters": [
+                "sampleCount": 1,
+                "aspectRatio": "3:4"
+            ]
+        ]
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // 🛡️ Add Bundle ID header to satisfy Google Cloud restrictions
+        if let bundleID = Bundle.main.bundleIdentifier {
+            request.setValue(bundleID, forHTTPHeaderField: "X-Ios-Bundle-Identifier")
+        }
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 else {
+            print("Imagen Error: \(String(data: data, encoding: .utf8) ?? "Unknown")")
+            throw StylistError.apiError("Image Generation Failed: \( (response as? HTTPURLResponse)?.statusCode ?? 0)")
+        }
+        
+        // Parse Base64 Image Response
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let predictions = json["predictions"] as? [[String: Any]],
               let first = predictions.first,
               let b64 = first["bytesBase64Encoded"] as? String,
-              let image = Data(base64Encoded: b64) else {
-            throw StylistError.invalidResponse
+              let imageData = Data(base64Encoded: b64) else {
+            throw StylistError.invalidImageData
         }
         
-        return image
+        return imageData
     }
 }
 
