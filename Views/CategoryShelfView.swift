@@ -7,6 +7,14 @@ import SwiftData
 struct CategoryShelfView: View {
     let category: Category
     @Binding var selectedTab: Int
+    @State private var isExpanded: Bool
+    
+    init(category: Category, selectedTab: Binding<Int>) {
+        self.category = category
+        self._selectedTab = selectedTab
+        // Default to expanded if there are items, collapsed if empty
+        self._isExpanded = State(initialValue: !category.items.isEmpty)
+    }
     
     private var sortedItems: [ClothingItem] {
         category.items.sorted { $0.dateAdded > $1.dateAdded }
@@ -15,49 +23,64 @@ struct CategoryShelfView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
-            HStack(alignment: .firstTextBaseline) {
-                Text(category.name)
-                    .poshHeadline(size: 20)
-                
-                Text("\(category.items.count)")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(PoshTheme.Colors.ink.opacity(0.1))
-                    .clipShape(Capsule())
-                
-                Spacer()
-
-            }
-            .padding(.horizontal)
-            
-            // Horizontal scroll of items or Shadow Placeholders
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    if sortedItems.isEmpty {
-                        // Shadow Shelf for empty categories with descriptive emoji
-                        let emoji = placeholderEmoji(for: category.name)
-                        ShadowPlaceholderCard(emoji: emoji)
-                            .frame(width: 140)
-                            .onTapGesture {
-                                withAnimation {
-                                    selectedTab = 1 // Switch to Curate tab
-                                }
-                            }
-                    } else {
-                        ForEach(sortedItems) { item in
-                            NavigationLink {
-                                ItemDetailView(item: item)
-                            } label: {
-                                ItemThumbnailView(item: item)
-                                    .frame(width: 140)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+            Button {
+                withAnimation(.spring()) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(alignment: .center) {
+                    Text(category.name)
+                        .poshHeadline(size: 20)
+                    
+                    Text("\(category.items.count)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(PoshTheme.Colors.ink.opacity(0.1))
+                        .clipShape(Capsule())
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
                 .padding(.horizontal)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            
+            // Horizontal scroll of items or Shadow Placeholders
+            if isExpanded {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 12) {
+                        if sortedItems.isEmpty {
+                            // Shadow Shelf for empty categories with descriptive emoji
+                            let emoji = placeholderEmoji(for: category.name)
+                            ShadowPlaceholderCard(emoji: emoji)
+                                .frame(width: 140)
+                                .onTapGesture {
+                                    withAnimation {
+                                        selectedTab = 1 // Switch to Curate tab
+                                    }
+                                }
+                        } else {
+                            ForEach(sortedItems) { item in
+                                NavigationLink {
+                                    ItemDetailView(item: item)
+                                } label: {
+                                    ItemThumbnailView(item: item)
+                                        .frame(width: 140)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
         }
     }
