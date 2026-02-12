@@ -221,7 +221,6 @@ struct StylingCanvasView: View {
                 }
             }
         }
-        }
     }
     
     private func saveOutfit() {

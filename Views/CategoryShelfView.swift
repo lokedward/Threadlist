@@ -12,8 +12,8 @@ struct CategoryShelfView: View {
     init(category: Category, selectedTab: Binding<Int>) {
         self.category = category
         self._selectedTab = selectedTab
-        // Default to expanded if there are items, collapsed if empty
-        self._isExpanded = State(initialValue: !category.items.isEmpty)
+        // Default to expanded for roomier feel
+        self._isExpanded = State(initialValue: true)
     }
     
     private var sortedItems: [ClothingItem] {

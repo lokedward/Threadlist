@@ -20,7 +20,7 @@ class StylistService {
     }
     
     var generationsRemaining: Int? {
-        let limit = userTier == .premium ? 50 : 3
+        let limit = userTier == .premium ? 50 : 10
         resetCountIfNeeded()
         return max(0, limit - dailyGenerationCount)
     }
@@ -399,7 +399,7 @@ enum StylistError: LocalizedError {
         case .apiError(let message):
             return message
         case .limitReached:
-            return "You've reached your daily limit of 3 outfits. Upgrade to Premium for unlimited looks!"
+            return "You've reached your daily limit of 10 outfits. Upgrade to Premium for unlimited looks!"
         }
     }
 }
