@@ -34,6 +34,11 @@ struct HomeView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 32) {
+                        // Favorite Looks Shelf
+                        if !outfits.isEmpty {
+                            favoritesShelf
+                        }
+                        
                         // Closet Section
                         VStack(spacing: 24) {
                             HStack {
@@ -68,10 +73,6 @@ struct HomeView: View {
                             }
                         }
                         
-                        // Favorite Looks Shelf
-                        if !outfits.isEmpty {
-                            favoritesShelf
-                        }
                     }
                     .padding(.vertical)
                 }
