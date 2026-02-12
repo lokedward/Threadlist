@@ -13,6 +13,8 @@ struct SettingsView: View {
     // Removed AppearanceMode AppStorage
 
     
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    
     @State private var showingClearConfirmation = false
     @State private var showingExportSheet = false
     @State private var exportURL: URL?
@@ -248,6 +250,9 @@ struct SettingsView: View {
             let category = Category(name: name, displayOrder: index)
             modelContext.insert(category)
         }
+        
+        // Reset onboarding state
+        hasCompletedOnboarding = false
     }
 }
 
