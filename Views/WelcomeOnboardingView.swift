@@ -14,20 +14,9 @@ struct WelcomeOnboardingView: View {
             
             ScrollView {
                 VStack(spacing: 40) {
-                    // Hero Header + Skip
-                    ZStack(alignment: .topTrailing) {
-                        VStack(spacing: 8) {
-                            Text("The Digital Studio")
-                                .poshHeadline(size: 32)
-                                .multilineTextAlignment(.center)
-                            
-                            Text("CURATE YOUR WARDROBE")
-                                .font(.system(size: 10, weight: .bold))
-                                .tracking(3)
-                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
-                        }
-                        .frame(maxWidth: .infinity)
-                        
+                    // Top Navigation
+                    HStack {
+                        Spacer()
                         Button {
                             withAnimation { hasCompletedOnboarding = true }
                         } label: {
@@ -37,7 +26,20 @@ struct WelcomeOnboardingView: View {
                                 .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
                         }
                     }
-                    .padding(.top, 60)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                    
+                    // Hero Header
+                    VStack(spacing: 8) {
+                        Text("The Digital Studio")
+                            .poshHeadline(size: 32)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("CURATE YOUR WARDROBE")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(3)
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
+                    }
                     .padding(.horizontal)
                     
                     if let selected = selectedTemplate {
@@ -122,7 +124,7 @@ struct WelcomeOnboardingView: View {
                     
                     // Footer Hint
                     if selectedTemplate == nil {
-                        Text("This structure helps you visualize your full potential")
+                        Text("Start by building out categories for your digital wardrobe.")
                             .poshBody(size: 12)
                             .opacity(0.4)
                             .padding(.bottom, 40)
