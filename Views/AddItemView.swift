@@ -84,7 +84,8 @@ struct AddItemView: View {
                 onOpenBulkGallery: { showingBulkPhotoPicker = true },
                 onSave: saveItem,
                 onCropComplete: { img in selectedImage = img },
-                onSkip: skipAction
+                onSkip: skipAction,
+                onCancel: (additionMode == .multiple && (!bulkImageQueue.isEmpty || !emailItemsQueue.isEmpty)) ? cancelReview : nil
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -196,6 +197,15 @@ struct AddItemView: View {
         }
     }
     
+    private func cancelReview() {
+        withAnimation {
+            bulkImageQueue.removeAll()
+            emailItemsQueue.removeAll()
+            additionMode = .single
+            resetForm()
+        }
+    }
+    
     private func resetForm() {
         selectedImage = nil
         selectedPhotoItem = nil
@@ -285,6 +295,7 @@ struct MainFormView: View {
     let onSave: () -> Void
     let onCropComplete: (UIImage) -> Void
     var onSkip: (() -> Void)? = nil
+    var onCancel: (() -> Void)? = nil
     
     var body: some View {
         ZStack {
@@ -341,6 +352,16 @@ struct MainFormView: View {
 
                                     }
                                     .padding(.top, 8)
+                                }
+                                
+                                if let onCancel = onCancel {
+                                    Button(action: onCancel) {
+                                        Text("ABORT REVIEW")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .tracking(1)
+                                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+                                    }
+                                    .padding(.top, 4)
                                 }
                             }
                         }
