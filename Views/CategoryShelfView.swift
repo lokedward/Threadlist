@@ -105,8 +105,8 @@ struct ShadowPlaceholderCard: View {
                 VStack(spacing: 8) {
                     Text(emoji)
                         .font(.system(size: 32))
-                        .grayscale(0.5)
-                        .opacity(0.4)
+                        .grayscale(1.0)
+                        .opacity(0.3)
                     
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .light))
