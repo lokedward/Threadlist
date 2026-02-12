@@ -48,12 +48,10 @@ struct CategoryShelfView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 12) {
                     if sortedItems.isEmpty {
-                        // Shadow Shelves for empty categories with descriptive emojis
+                        // Shadow Shelf for empty categories with descriptive emoji
                         let emoji = placeholderEmoji(for: category.name)
-                        ForEach(0..<3) { _ in
-                            ShadowPlaceholderCard(emoji: emoji)
-                                .frame(width: 140)
-                        }
+                        ShadowPlaceholderCard(emoji: emoji)
+                            .frame(width: 140)
                     } else {
                         ForEach(sortedItems) { item in
                             NavigationLink {
