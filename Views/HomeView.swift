@@ -28,11 +28,6 @@ struct HomeView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 32) {
-                        // Favorite Looks Shelf
-                        if !outfits.isEmpty {
-                            favoritesShelf
-                        }
-                        
                         // Closet Section
                         VStack(spacing: 24) {
                             HStack {
@@ -56,6 +51,11 @@ struct HomeView: View {
                             ForEach(categories) { category in
                                 CategoryShelfView(category: category, selectedTab: $selectedTab)
                             }
+                        }
+                        
+                        // Favorite Looks Shelf
+                        if !outfits.isEmpty {
+                            favoritesShelf
                         }
                     }
                     .padding(.vertical)
@@ -104,7 +104,7 @@ struct HomeView: View {
                                 Image(uiImage: image)
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
-                                    .frame(width: 200, height: 280) // Portrait Aspect
+                                    .frame(width: 140, height: 200) // Portrait Aspect
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .poshCard()
                             }
