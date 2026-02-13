@@ -65,52 +65,46 @@ extension UIImage {
     /// Removes the background from the image using on-device Vision framework.
     /// Requirements: iOS 17.0+
     func removeBackground() async throws -> UIImage? {
-        // 1. Ensure we have a fixed orientation image for processing
-        let fixedImage = self.fixedOrientation()
-        guard let cgImage = fixedImage.cgImage else { return nil }
+        // 1. Fix orientation first to ensure cgImage matches display orientation
+        let fixed = self.fixedOrientation()
+        guard let cgImage = fixed.cgImage else { return nil }
         
-        // 2. Setup Vision request for foreground instance mask
+        // 2. Setup Vision request
         let request = VNGenerateForegroundInstanceMaskRequest()
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let handler = VNImageRequestHandler(cgImage: cgImage)
         
         do {
             try handler.perform([request])
         } catch {
-            print("❌ Vision background removal error: \(error)")
+            print("❌ Vision background removal failed: \(error)")
             return nil
         }
         
         guard let result = request.results?.first as? VNPixelBufferObservation else {
-            print("⚠️ Vision: No foreground detected")
             return nil
         }
         
-        // 3. Create CIImages for original and mask
-        let inputImage = CIImage(cgImage: cgImage)
+        // 3. Process the mask
         let maskPixelBuffer = result.pixelBuffer
-        let maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
+        let ciImage = CIImage(cgImage: cgImage)
+        var maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
         
-        // 4. Transform and scale the mask to match the input image perfectly
-        let scaleX = inputImage.extent.width / maskImage.extent.width
-        let scaleY = inputImage.extent.height / maskImage.extent.height
-        let scaleTransform = CGAffineTransform(scaleX: scaleX, y: scaleY)
-        let scaledMask = maskImage.transformed(by: scaleTransform)
+        // Scale mask to match original image size
+        let scaleX = ciImage.extent.width / maskImage.extent.width
+        let scaleY = ciImage.extent.height / maskImage.extent.height
+        maskImage = maskImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
         
-        // 5. Use the blend filter with alpha mask
-        // Note: Vision masks are grayscale where 1.0 is foreground
-        let parameters: [String: Any] = [
-            kCIInputImageKey: inputImage,
-            kCIInputMaskImageKey: scaledMask
-        ]
+        // 4. Apply mask using blend filter
+        let filter = CIFilter.blendWithMask()
+        filter.inputImage = ciImage
+        filter.maskImage = maskImage
+        filter.backgroundImage = CIImage.empty()
         
-        guard let filter = CIFilter(name: "CIBlendWithAlphaMask", parameters: parameters),
-              let outputCIImage = filter.outputImage else {
-            return nil
-        }
+        guard let outputCIImage = filter.outputImage else { return nil }
         
-        // 6. Create final CGImage
+        // 5. Render result back to UIImage
         let context = CIContext(options: [.useSoftwareRenderer: false])
-        guard let outputCGImage = context.createCGImage(outputCIImage, from: inputImage.extent) else {
+        guard let outputCGImage = context.createCGImage(outputCIImage, from: ciImage.extent) else {
             return nil
         }
         
