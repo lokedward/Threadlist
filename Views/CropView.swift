@@ -24,7 +24,7 @@ struct CropView: View {
     @State private var cropSize: CGSize = .zero
     
     // UX constants
-    @State private var minScale: CGFloat = 1.0
+    private let minScale: CGFloat = 1.0
     private let maxScale: CGFloat = 4.0
     
     var body: some View {
@@ -165,17 +165,7 @@ struct CropView: View {
             imageSize = CGSize(width: width, height: height)
         }
         
-        // 3. Calculate Min Scale (Aspect Fit)
-        // This allows us to zoom out until the whole image is visible inside the crop box
-        if imgRatio > cropRatio {
-            // Image is wider -> Min scale is when width fits
-            minScale = cropSize.width / width
-        } else {
-            // Image is taller -> Min scale is when height fits
-            minScale = cropSize.height / height
-        }
-        
-        // 4. Reset State
+        // 3. Reset State
         scale = 1.0
         lastScale = 1.0
         offset = .zero
@@ -206,21 +196,19 @@ struct CropView: View {
         if horizontalOverflow > 0 {
             newX = min(max(newX, -horizontalOverflow), horizontalOverflow)
         } else {
-            // Centering if zoomed out beyond the width
             newX = 0
         }
         
         if verticalOverflow > 0 {
             newY = min(max(newY, -verticalOverflow), verticalOverflow)
         } else {
-            // Centering if zoomed out beyond the height
             newY = 0
         }
         
         offset = CGSize(width: newX, height: newY)
         lastOffset = offset
         
-        // We still allow a bit of "bounce" but usually we'd snap here
+        // Re-enforce min scale if user pinched too small
         if scale < minScale {
             scale = minScale
         }
@@ -229,33 +217,40 @@ struct CropView: View {
     // MARK: - Cropping Logic
     
     private func cropImage() -> UIImage? {
-        // We need to create a square image that represents what the user sees in the crop box.
-        // Instead of just cropping the original CGImage (which fails if we want padding),
-        // we use UIGraphicsImageRenderer to draw the original image into a new square canvas.
+        // We need to map the "Crop Box" (screen coordinates) back to the "Original Image" (pixel coordinates).
         
-        let outputSize = CGSize(width: 2000, height: 2000) // High-res square output
-        let renderer = UIGraphicsImageRenderer(size: outputSize)
+        // 1. Determine the visible rect relative to the Image View
+        // The image view is centered. The crop box is centered.
+        // The difference is determined by `scale` and `offset`.
         
-        // The scale factor between our screen `cropSize` and the `outputSize`
-        let outputScale = outputSize.width / cropSize.width
+        // Center of the image view (in its own coordinate system)
+        let centerX = imageSize.width / 2
+        let centerY = imageSize.height / 2
         
-        return renderer.image { context in
-            // 1. Background Fill (Cinematic Black)
-            UIColor.black.setFill()
-            context.fill(CGRect(origin: .zero, size: outputSize))
-            
-            // 2. Draw the image with user's transform
-            // We need to map: (Image Center + Offset) * OutputScale
-            
-            let drawWidth = imageSize.width * scale * outputScale
-            let drawHeight = imageSize.height * scale * outputScale
-            
-            // The position of the image center relative to the crop box center (which is the center of our output canvas)
-            let drawX = (outputSize.width / 2) - (drawWidth / 2) + (offset.width * outputScale)
-            let drawY = (outputSize.height / 2) - (drawHeight / 2) + (offset.height * outputScale)
-            
-            image.draw(in: CGRect(x: drawX, y: drawY, width: drawWidth, height: drawHeight))
-        }
+        // The scale factor between the Screen Image and the Original UIImage
+        // We rendered the image at `imageSize`. The original is `image.size`.
+        let renderRatio = image.size.width / imageSize.width
+        
+        // Calculate the "Viewport" rectangle on the Rendered Image (pre-scale)
+        // Offset moves the image, so effectively it moves the crop rect in the opposite direction relative to image center
+        let visibleWidth = cropSize.width / scale
+        let visibleHeight = cropSize.height / scale
+        
+        let visibleX = centerX - (visibleWidth / 2) - (offset.width / scale)
+        let visibleY = centerY - (visibleHeight / 2) - (offset.height / scale)
+        
+        // 2. Convert to Original Image Coordinates
+        let cropX = visibleX * renderRatio
+        let cropY = visibleY * renderRatio
+        let cropW = visibleWidth * renderRatio
+        let cropH = visibleHeight * renderRatio
+        
+        let cropRect = CGRect(x: cropX, y: cropY, width: cropW, height: cropH)
+        
+        // 3. Perform Crop
+        guard let cgImage = image.cgImage?.cropping(to: cropRect) else { return nil }
+        
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 }
 
