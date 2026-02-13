@@ -6,15 +6,13 @@ import SwiftUI
 struct EmailImportView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var service = EmailOnboardingService.shared
+    @StateObject private var subscriptionService = SubscriptionService.shared
     @State private var showingTimeRangeSelection = false
     @State private var selectedRange: TimeRange = .sixMonths
     @State private var showingUpgradePrompt = false
     @State private var importedItems: [EmailProductItem] = []
     @State private var showingReviewScreen = false
     @State private var showingBulkAddFlow = false
-    
-    // User tier (get from app state)
-    let userTier: GenerationTier
     
     var body: some View {
         ZStack {
@@ -267,7 +265,7 @@ struct EmailImportView: View {
             do {
                 importedItems = try await service.importFromGmail(
                     timeRange: selectedRange,
-                    userTier: userTier
+                    userTier: subscriptionService.currentTier == .atelier ? .premium : .free
                 )
                 showingReviewScreen = true
             } catch {
@@ -355,5 +353,5 @@ struct TimeRangeOption: View {
 // MARK: - Preview
 
 #Preview {
-    EmailImportView(userTier: .free)
+    EmailImportView()
 }

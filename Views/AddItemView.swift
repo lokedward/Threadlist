@@ -51,6 +51,7 @@ struct AddItemView: View {
     @State private var isLoadingEmailImage = false
     @State private var showingSaveAlert = false
     @State private var dynamicLoadingMessage = "PROCESSING..."
+    @State private var showPaywall = false
     
     var canSave: Bool {
         let hasImage = additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty
@@ -139,6 +140,9 @@ struct AddItemView: View {
                 if isProcessingImage {
                     ProcessingOverlayView(message: dynamicLoadingMessage)
                 }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
             .onAppear {
                 if let prefilled = prefilledItems, !prefilled.isEmpty {
@@ -246,6 +250,12 @@ struct AddItemView: View {
         let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
         guard let image = currentImage, let category = selectedCategory else { return }
         
+        // Check Capacity for Free users
+        if !SubscriptionService.shared.canAddItem(currentCount: items.count) {
+            showPaywall = true
+            return
+        }
+        
         // Dismiss keyboard
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
@@ -298,6 +308,12 @@ struct AddItemView: View {
     }
 
     private func performMagicFill() {
+        // Check Limit
+        if !SubscriptionService.shared.canPerformMagicFill() {
+            showPaywall = true
+            return
+        }
+        
         let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
         guard let image = currentImage else { return }
         
@@ -307,6 +323,7 @@ struct AddItemView: View {
             do {
                 let metadata = try await StylistService.shared.enrichMetadata(image: image)
                 await MainActor.run {
+                    SubscriptionService.shared.recordMagicFill()
                     withAnimation {
                         self.name = metadata.name
                         self.brand = metadata.brand ?? ""

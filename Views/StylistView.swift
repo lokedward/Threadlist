@@ -23,9 +23,9 @@ struct StylistView: View {
     @State private var isGenerating = false
     @State private var isSaved = false
     
-    // Stylist Message
     @State private var stylistMessage: String?
     @State private var showMessage = false
+    @State private var showPaywall = false
     
     @State private var dynamicLoadingMessage = "STYLIST IS THINKING..."
     
@@ -52,6 +52,9 @@ struct StylistView: View {
                     if isStyling {
                         ProcessingOverlayView(message: dynamicLoadingMessage)
                     }
+                }
+                .sheet(isPresented: $showPaywall) {
+                    PaywallView()
                 }
                 
                 // Stylist Message Overlay
@@ -172,6 +175,12 @@ struct StylistView: View {
     }
     
     private func performAISuggestion() {
+        // Check Limit
+        if !SubscriptionService.shared.canPerformStyleMe() {
+            showPaywall = true
+            return
+        }
+        
         let targetOccasion = occasionRaw == StylistOccasion.custom.rawValue ? customOccasion : occasionRaw
         
         dynamicLoadingMessage = LoadingMessageService.shared.randomMessage(for: .styling)
@@ -210,6 +219,7 @@ struct StylistView: View {
                             self.generatedImage = image
                             self.isGenerating = false
                             self.isSaved = false
+                            SubscriptionService.shared.recordGeneration()
                         }
                         
                         // Show the message with a slight delay after image appears

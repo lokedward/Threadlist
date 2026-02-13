@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showingExportSheet = false
     @State private var exportURL: URL?
     @State private var showingEmailImport = false
+    @State private var showPaywall = false
     
     @Query private var allItems: [ClothingItem]
     @Query private var allCategories: [Category]
@@ -66,14 +67,25 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.plain)
                             
-                            // Email Import Test Button
+                            // Email Import Button
                             Button {
-                                showingEmailImport = true
+                                if SubscriptionService.shared.currentTier.canImportEmail {
+                                    showingEmailImport = true
+                                } else {
+                                    showPaywall = true
+                                }
                             } label: {
                                 HStack {
-                                    Label("IMPORT FROM GMAIL (TEST)", systemImage: "envelope.fill")
+                                    Label("IMPORT FROM GMAIL", systemImage: "envelope.fill")
                                         .font(.system(size: 13, weight: .semibold))
                                         .tracking(1)
+                                    
+                                    if !SubscriptionService.shared.currentTier.canImportEmail {
+                                        Image(systemName: "crown.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(PoshTheme.Colors.gold)
+                                    }
+                                    
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12, weight: .bold))
@@ -186,7 +198,10 @@ struct SettingsView: View {
                 }
             }
             .sheet(isPresented: $showingEmailImport) {
-                EmailImportView(userTier: .free) // TODO: Use actual user tier
+                EmailImportView()
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
         }
 
