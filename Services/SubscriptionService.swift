@@ -19,16 +19,28 @@ enum SubscriptionTier: String, Codable, CaseIterable {
     
     var dailyMagicFillLimit: Int {
         switch self {
-        case .free: return 5
-        case .boutique, .atelier: return 1000 // Effectively unlimited
+        case .free: return 0 // Now disabled for Free users
+        case .boutique, .atelier: return 1000
         }
     }
     
-    var dailyStyleMeLimit: Int {
+    var styleMeLimit: Int {
         switch self {
-        case .free: return 3
-        case .boutique, .atelier: return 50
+        case .free: return 3 // Daily
+        case .boutique: return 50 // Monthly
+        case .atelier: return 30 // Daily (Fair Use Throttle)
         }
+    }
+    
+    var limitPeriod: LimitPeriod {
+        switch self {
+        case .boutique: return .monthly
+        case .free, .atelier: return .daily
+        }
+    }
+    
+    enum LimitPeriod {
+        case daily, monthly
     }
     
     var canImportEmail: Bool {
@@ -47,7 +59,9 @@ class SubscriptionService: ObservableObject {
     private let tierKey = "userSubscriptionTier"
     private let magicFillKey = "dailyMagicFillCount"
     private let generationKey = "dailyGenerationCount"
+    private let monthlyGenerationKey = "monthlyGenerationCount"
     private let resetKey = "lastResetDate"
+    private let monthlyResetKey = "lastMonthlyResetDate"
     
     private init() {
         // Load state
@@ -79,12 +93,23 @@ class SubscriptionService: ObservableObject {
     
     func canPerformStyleMe() -> Bool {
         checkAndResetLimits()
-        return generationCount < currentTier.dailyStyleMeLimit
+        if currentTier.limitPeriod == .monthly {
+            let count = UserDefaults.standard.integer(forKey: monthlyGenerationKey)
+            return count < currentTier.styleMeLimit
+        } else {
+            return generationCount < currentTier.styleMeLimit
+        }
     }
     
     func recordGeneration() {
-        generationCount += 1
-        UserDefaults.standard.set(generationCount, forKey: generationKey)
+        if currentTier.limitPeriod == .monthly {
+            var count = UserDefaults.standard.integer(forKey: monthlyGenerationKey)
+            count += 1
+            UserDefaults.standard.set(count, forKey: monthlyGenerationKey)
+        } else {
+            generationCount += 1
+            UserDefaults.standard.set(generationCount, forKey: generationKey)
+        }
     }
     
     // MARK: - Tier Management
@@ -101,13 +126,22 @@ class SubscriptionService: ObservableObject {
     private func checkAndResetLimits() {
         let now = Date()
         let lastReset = Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: resetKey))
+        let lastMonthlyReset = Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: monthlyResetKey))
         
+        // Daily Reset
         if !Calendar.current.isDate(now, inSameDayAs: lastReset) {
             magicFillCount = 0
             generationCount = 0
             UserDefaults.standard.set(0, forKey: magicFillKey)
             UserDefaults.standard.set(0, forKey: generationKey)
             UserDefaults.standard.set(now.timeIntervalSince1970, forKey: resetKey)
+        }
+        
+        // Monthly Reset (Every 30 days or same day of month)
+        let thirtyDays: TimeInterval = 30 * 24 * 60 * 60
+        if now.timeIntervalSince(lastMonthlyReset) > thirtyDays {
+            UserDefaults.standard.set(0, forKey: monthlyGenerationKey)
+            UserDefaults.standard.set(now.timeIntervalSince1970, forKey: monthlyResetKey)
         }
     }
 }

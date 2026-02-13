@@ -98,7 +98,7 @@ struct PaywallView: View {
         VStack(spacing: 16) {
             tierCard(
                 tier: .boutique,
-                price: "$4.99 / mo",
+                price: "$3.99 / mo",
                 tagline: "The Everyday Enthusiast",
                 isPopular: true
             )

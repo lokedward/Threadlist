@@ -53,6 +53,7 @@ struct AddItemView: View {
     @State private var showingSaveAlert = false
     @State private var dynamicLoadingMessage = "PROCESSING..."
     @State private var showPaywall = false
+    @State private var showingMagicFillExplainer = false
     
     var canSave: Bool {
         let hasImage = additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty
@@ -144,6 +145,13 @@ struct AddItemView: View {
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
+            }
+            .sheet(isPresented: $showingMagicFillExplainer) {
+                MagicFillExplainerView {
+                    showingMagicFillExplainer = false
+                    showPaywall = true
+                }
+                .presentationDetents([.medium])
             }
             .onAppear {
                 if let prefilled = prefilledItems, !prefilled.isEmpty {
@@ -309,6 +317,11 @@ struct AddItemView: View {
     }
 
     private func performMagicFill() {
+        if SubscriptionService.shared.currentTier == .free {
+            showingMagicFillExplainer = true
+            return
+        }
+        
         // Check Limit
         if !SubscriptionService.shared.canPerformMagicFill() {
             showPaywall = true
@@ -722,4 +735,78 @@ struct PoshTextField: View {
 
 #Preview {
     AddItemView().modelContainer(for: [ClothingItem.self, Category.self], inMemory: true)
+}
+
+// MARK: - Premium Explainer View
+
+struct MagicFillExplainerView: View {
+    let onUpgrade: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack {
+            PoshTheme.Colors.canvas.ignoresSafeArea()
+            
+            VStack(spacing: 30) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 40))
+                        .foregroundColor(PoshTheme.Colors.gold)
+                        .padding(.top, 20)
+                    
+                    Text("AI MAGIC FILL")
+                        .font(.system(size: 18, weight: .bold))
+                        .tracking(3)
+                        .foregroundColor(PoshTheme.Colors.ink)
+                }
+                
+                // Content
+                VStack(spacing: 20) {
+                    explainerRow(icon: "tag.fill", text: "Automatically identifies brands and sizes from your photos.")
+                    explainerRow(icon: "list.bullet.indent", text: "Generates professional names and descriptive tags.")
+                    explainerRow(icon: "folder.fill", text: "Catalogs your wardrobe 10x faster with AI enrichment.")
+                }
+                .padding(.horizontal, 30)
+                
+                Spacer()
+                
+                // CTA
+                VStack(spacing: 16) {
+                    Button(action: onUpgrade) {
+                        Text("UPGRADE TO UNLOCK")
+                            .tracking(2)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .poshButton()
+                    
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("MAYBE LATER")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1)
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+                    }
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 30)
+            }
+        }
+    }
+    
+    private func explainerRow(icon: String, text: String) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(PoshTheme.Colors.gold)
+                .frame(width: 24)
+            
+            Text(text)
+                .font(.system(size: 14, weight: .light))
+                .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.leading)
+        }
+    }
 }

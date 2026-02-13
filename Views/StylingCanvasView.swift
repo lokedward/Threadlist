@@ -114,7 +114,7 @@ struct StylingCanvasView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                         
-                        Text(SubscriptionService.shared.currentTier == .free ? "Using 1 of 3 daily generations" : "Premium quality generation")
+                        Text(usageMessage)
                             .font(.system(size: 10, weight: .light))
                             .foregroundColor(PoshTheme.Colors.ink.opacity(0.5))
                     }
@@ -204,6 +204,18 @@ struct StylingCanvasView: View {
         }
         .sheet(isPresented: $showUpgradePrompt) {
             PaywallView()
+        }
+    }
+    
+    private var usageMessage: String {
+        let service = SubscriptionService.shared
+        switch service.currentTier {
+        case .free: 
+            return "Using 1 of 3 daily generations"
+        case .boutique:
+            return "Boutique tier: Consuming monthly credit"
+        case .atelier:
+            return "Elite tier: Priority processing"
         }
     }
     
