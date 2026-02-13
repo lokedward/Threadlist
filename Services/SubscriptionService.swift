@@ -3,6 +3,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 enum SubscriptionTier: String, Codable, CaseIterable {
     case free = "Free"
@@ -39,18 +40,23 @@ enum SubscriptionTier: String, Codable, CaseIterable {
 class SubscriptionService: ObservableObject {
     static let shared = SubscriptionService()
     
-    @AppStorage("userSubscriptionTier") private var tierRaw = SubscriptionTier.free.rawValue
+    @Published private(set) var currentTier: SubscriptionTier = .free
+    @Published private(set) var magicFillCount = 0
+    @Published private(set) var generationCount = 0
     
-    // Usage tracking (Persisted in AppStorage for simplicity in this version)
-    @AppStorage("dailyMagicFillCount") private var magicFillCount = 0
-    @AppStorage("dailyGenerationCount") private var generationCount = 0
-    @AppStorage("lastResetDate") private var lastResetDate: Double = Date().timeIntervalSince1970
-    
-    var currentTier: SubscriptionTier {
-        SubscriptionTier(rawValue: tierRaw) ?? .free
-    }
+    private let tierKey = "userSubscriptionTier"
+    private let magicFillKey = "dailyMagicFillCount"
+    private let generationKey = "dailyGenerationCount"
+    private let resetKey = "lastResetDate"
     
     private init() {
+        // Load state
+        let savedTier = UserDefaults.standard.string(forKey: tierKey) ?? ""
+        self.currentTier = SubscriptionTier(rawValue: savedTier) ?? .free
+        
+        self.magicFillCount = UserDefaults.standard.integer(forKey: magicFillKey)
+        self.generationCount = UserDefaults.standard.integer(forKey: generationKey)
+        
         checkAndResetLimits()
     }
     
@@ -68,6 +74,7 @@ class SubscriptionService: ObservableObject {
     
     func recordMagicFill() {
         magicFillCount += 1
+        UserDefaults.standard.set(magicFillCount, forKey: magicFillKey)
     }
     
     func canPerformStyleMe() -> Bool {
@@ -77,13 +84,15 @@ class SubscriptionService: ObservableObject {
     
     func recordGeneration() {
         generationCount += 1
+        UserDefaults.standard.set(generationCount, forKey: generationKey)
     }
     
     // MARK: - Tier Management
     
     func upgrade(to tier: SubscriptionTier) {
         withAnimation {
-            tierRaw = tier.rawValue
+            currentTier = tier
+            UserDefaults.standard.set(tier.rawValue, forKey: tierKey)
         }
     }
     
@@ -91,12 +100,14 @@ class SubscriptionService: ObservableObject {
     
     private func checkAndResetLimits() {
         let now = Date()
-        let lastReset = Date(timeIntervalSince1970: lastResetDate)
+        let lastReset = Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: resetKey))
         
         if !Calendar.current.isDate(now, inSameDayAs: lastReset) {
             magicFillCount = 0
             generationCount = 0
-            lastResetDate = now.timeIntervalSince1970
+            UserDefaults.standard.set(0, forKey: magicFillKey)
+            UserDefaults.standard.set(0, forKey: generationKey)
+            UserDefaults.standard.set(now.timeIntervalSince1970, forKey: resetKey)
         }
     }
 }
