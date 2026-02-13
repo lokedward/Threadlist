@@ -25,6 +25,53 @@ class StylistService {
         return max(0, limit - dailyGenerationCount)
     }
     
+    // MARK: - Magic Fill (Metadata Enrichment)
+    
+    struct GarmentMetadata: Codable {
+        let name: String
+        let brand: String?
+        let size: String?
+        let category: String
+        let tags: [String]
+    }
+    
+    func enrichMetadata(image: UIImage) async throws -> GarmentMetadata {
+        guard let data = image.jpegData(compressionQuality: 0.7) else {
+            throw StylistError.invalidImageData
+        }
+        
+        // Define the categories we support to help Gemini categorize accurately
+        let knownCategories = ["Tops", "Bottoms", "Outerwear", "Shoes", "Accessories"]
+        
+        let prompt = """
+        Accurately identify this clothing item for a high-end fashion app.
+        Be professional and concise.
+        
+        Output only a valid JSON object:
+        - "name": Brief, professional name (e.g. "Charcoal Wool Blazer", not "A very nice blazer")
+        - "brand": Brand name if clearly visible on labels/logos, otherwise null
+        - "size": Size if clearly visible on tags, otherwise null
+        - "category": Categorize as exactly one of: \(knownCategories.joined(separator: ", "))
+        - "tags": 3-5 high-quality descriptive keywords (fabric, style, occasion)
+        
+        Return PURE JSON. No descriptions.
+        """
+        
+        let jsonString = try await callGemini(model: "gemini-2.5-flash", prompt: prompt, images: [data], responseType: .text)
+        
+        // Clean the response string if Gemini wrapped it in markdown code blocks
+        let cleanedJSON = jsonString
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard let jsonData = cleanedJSON.data(using: .utf8) else {
+            throw StylistError.invalidResponse
+        }
+        
+        return try JSONDecoder().decode(GarmentMetadata.self, from: jsonData)
+    }
+    
     // MARK: - Core Pipeline
     
     func generateModelPhoto(items: [ClothingItem], gender: Gender) async throws -> UIImage {

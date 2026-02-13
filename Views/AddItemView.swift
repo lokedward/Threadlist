@@ -93,7 +93,8 @@ struct AddItemView: View {
                 onSave: { saveItem() },
                 onCropComplete: { img in selectedImage = img },
                 onSkip: skipAction,
-                onCancel: cancelAction
+                onCancel: cancelAction,
+                onMagicFill: { performMagicFill() }
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -122,11 +123,15 @@ struct AddItemView: View {
                 imageToCrop: $imageToCrop,
                 isProcessingImage: $isProcessingImage,
                 onInitialImage: { img in croppingItem = CroppableImage(image: img) },
-                onFinalImage: { img in selectedImage = img },
+                onFinalImage: { img in 
+                    selectedImage = img
+                    performMagicFill()
+                },
                 onBulkProcessed: { imgs in 
                     bulkImageQueue = imgs
                     totalBulkItems = imgs.count
                     isMetadataExpanded = true
+                    performMagicFill()
                 }
             ))
             .overlay {
@@ -277,6 +282,9 @@ struct AddItemView: View {
                                 // Instead of resetting to single, we stay in the mode the user chose
                                 // but we clear the form for the next potential entry
                                 resetForm()
+                            } else {
+                                // Auto-fill the next item in the bulk queue
+                                performMagicFill()
                             }
                         }
                     }
@@ -284,6 +292,37 @@ struct AddItemView: View {
             } catch {
                 print("Error: \(error)")
                 await MainActor.run { isSaving = false }
+            }
+        }
+    }
+
+    private func performMagicFill() {
+        let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
+        guard let image = currentImage else { return }
+        
+        isProcessingImage = true
+        Task {
+            do {
+                let metadata = try await StylistService.shared.enrichMetadata(image: image)
+                await MainActor.run {
+                    withAnimation {
+                        self.name = metadata.name
+                        self.brand = metadata.brand ?? ""
+                        self.size = metadata.size ?? ""
+                        self.tagsText = metadata.tags.joined(separator: ", ")
+                        
+                        // Match category
+                        if let matched = categories.first(where: { $0.name.lowercased() == metadata.category.lowercased() }) {
+                            self.selectedCategory = matched
+                        }
+                    }
+                    self.isProcessingImage = false
+                }
+            } catch {
+                print("❌ Magic Fill Error: \(error)")
+                await MainActor.run {
+                    self.isProcessingImage = false
+                }
             }
         }
     }
@@ -313,6 +352,7 @@ struct MainFormView: View {
     let onCropComplete: (UIImage) -> Void
     var onSkip: (() -> Void)? = nil
     var onCancel: (() -> Void)? = nil
+    let onMagicFill: () -> Void
     
     var body: some View {
         ZStack {
@@ -348,7 +388,9 @@ struct MainFormView: View {
                                 DetailsSectionView(
                                     name: $name, category: $selectedCategory, brand: $brand,
                                     size: $size, tagsText: $tagsText, isExpanded: $isMetadataExpanded,
-                                    showExpandButton: additionMode == .multiple, categories: categories
+                                    showExpandButton: additionMode == .multiple, categories: categories,
+                                    onMagicFill: onMagicFill,
+                                    canMagicFill: (additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty)
                                 )
                                 
                                 Button(action: {
@@ -452,12 +494,29 @@ struct DetailsSectionView: View {
     @Binding var isExpanded: Bool
     let showExpandButton: Bool
     let categories: [Category]
+    let onMagicFill: () -> Void
+    let canMagicFill: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Text("Item Details").poshHeadline(size: 20)
                 Spacer()
+                
+                if canMagicFill {
+                    Button(action: onMagicFill) {
+                        HStack(spacing: 6) {
+                            Text("MAGIC FILL").font(.system(size: 9, weight: .bold)).tracking(1)
+                            Image(systemName: "sparkles")
+                        }
+                        .foregroundColor(PoshTheme.Colors.ink)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(PoshTheme.Colors.ink.opacity(0.05))
+                        .clipShape(Capsule())
+                    }
+                }
+                
                 if showExpandButton {
                     Button { withAnimation { isExpanded.toggle() } } label: {
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down").foregroundColor(PoshTheme.Colors.ink)
