@@ -606,9 +606,12 @@ struct AddItemPickerModifiers: ViewModifier {
         
         isProcessingImage = true
         Task.detached(priority: .userInitiated) {
-            var finalImg = image
+            // Downsample camera image first to improve Vision performance and reliability
+            let processedImage = image.resized(to: 1500)
+            
+            var finalImg = processedImage
             if self.autoRemoveBackground {
-                if let cleaned = try? await image.removeBackground() {
+                if let cleaned = try? await processedImage.removeBackground() {
                     finalImg = cleaned
                 }
             }
@@ -625,6 +628,9 @@ struct AddItemPickerModifiers: ViewModifier {
         isProcessingImage = true
         // Use detached task with userInitiated priority to move work off the Main Actor
         Task.detached(priority: .userInitiated) {
+            // Give UI time to show the processing spinner
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            
             if let data = try? await item.loadTransferable(type: Data.self),
                let img = UIImage.downsample(imageData: data, to: CGSize(width: 1500, height: 1500)) {
                 
@@ -652,6 +658,9 @@ struct AddItemPickerModifiers: ViewModifier {
         isProcessingImage = true
         // Use detached task for bulk processing to prevent UI freezing
         Task.detached(priority: .userInitiated) {
+            // Give UI time to show the processing spinner
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            
             var images: [UIImage] = []
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self),

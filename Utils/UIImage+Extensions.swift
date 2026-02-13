@@ -6,16 +6,15 @@ import CoreImage.CIFilterBuiltins
 extension UIImage {
     /// Returns a new image with the orientation fixed to .up (pixels rotated to match display).
     func fixedOrientation() -> UIImage {
-        if imageOrientation == .up {
-            return self
+        if imageOrientation == .up { return self }
+        
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = self.scale
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        
+        return renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
         }
-        
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        draw(in: CGRect(origin: .zero, size: size))
-        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return normalizedImage ?? self
     }
     
     /// Returns a new image resized to fit within the max dimension, maintaining aspect ratio.
@@ -71,6 +70,7 @@ extension UIImage {
         
         // 2. Setup Vision request for foreground instance mask
         let request = VNGenerateForegroundInstanceMaskRequest()
+        // Force evaluation with specific options if needed, but defaults are usually best
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         
         do {
@@ -88,32 +88,36 @@ extension UIImage {
         // 3. Create CIImages for original and mask
         let inputImage = CIImage(cgImage: cgImage)
         let maskPixelBuffer = result.pixelBuffer
+        
+        // Convert pixel buffer to CIImage and ensure it's treated as a mask (usually grayscale)
         let maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
         
         // 4. Transform and scale the mask to match the input image perfectly
         let scaleX = inputImage.extent.width / maskImage.extent.width
         let scaleY = inputImage.extent.height / maskImage.extent.height
-        let scaleTransform = CGAffineTransform(scaleX: scaleX, y: scaleY)
-        let scaledMask = maskImage.transformed(by: scaleTransform)
+        let scaledMask = maskImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
         
-        // 5. Use the blend filter with alpha mask
-        // Note: Vision masks are grayscale where 1.0 is foreground
-        let parameters: [String: Any] = [
-            kCIInputImageKey: inputImage,
-            kCIInputMaskImageKey: scaledMask
-        ]
+        // 5. Create a solid white background (or cream)
+        // This makes the "Cleanup" very obvious compared to transparency
+        let backgroundColor = CIColor(red: 1, green: 1, blue: 1) // Pure White
+        let background = CIImage(color: backgroundColor).cropped(to: inputImage.extent)
         
-        guard let filter = CIFilter(name: "CIBlendWithAlphaMask", parameters: parameters),
-              let outputCIImage = filter.outputImage else {
+        // 6. Use the blend filter with alpha mask
+        let filter = CIFilter.blendWithAlphaMask()
+        filter.inputImage = inputImage
+        filter.maskImage = scaledMask
+        filter.backgroundImage = background
+        
+        guard let outputCIImage = filter.outputImage else {
             return nil
         }
         
-        // 6. Create final CGImage
+        // 7. Create final CGImage
         let context = CIContext(options: [.useSoftwareRenderer: false])
         guard let outputCGImage = context.createCGImage(outputCIImage, from: inputImage.extent) else {
             return nil
         }
         
-        return UIImage(cgImage: outputCGImage)
+        return UIImage(cgImage: outputCGImage, scale: fixedImage.scale, orientation: .up)
     }
 }
