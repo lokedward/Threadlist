@@ -65,36 +65,46 @@ extension UIImage {
     /// Removes the background from the image using on-device Vision framework.
     /// Requirements: iOS 17.0+
     func removeBackground() async throws -> UIImage? {
-        guard let cgImage = self.cgImage else { return nil }
+        // 1. Fix orientation first to ensure cgImage matches display orientation
+        let fixed = self.fixedOrientation()
+        guard let cgImage = fixed.cgImage else { return nil }
         
+        // 2. Setup Vision request
         let request = VNGenerateForegroundInstanceMaskRequest()
         let handler = VNImageRequestHandler(cgImage: cgImage)
         
-        try handler.perform([request])
+        do {
+            try handler.perform([request])
+        } catch {
+            print("❌ Vision background removal failed: \(error)")
+            return nil
+        }
         
         guard let result = request.results?.first as? VNPixelBufferObservation else {
             return nil
         }
         
-        let ciImage = CIImage(cgImage: cgImage)
+        // 3. Process the mask
         let maskPixelBuffer = result.pixelBuffer
-        
-        // Convert pixel buffer to CIImage and scale it to match the original image size
+        let ciImage = CIImage(cgImage: cgImage)
         var maskImage = CIImage(cvPixelBuffer: maskPixelBuffer)
+        
+        // Scale mask to match original image size
         let scaleX = ciImage.extent.width / maskImage.extent.width
         let scaleY = ciImage.extent.height / maskImage.extent.height
         maskImage = maskImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
         
-        // Use a blend filter to apply the mask
+        // 4. Apply mask using blend filter
         let filter = CIFilter.blendWithMask()
         filter.inputImage = ciImage
         filter.maskImage = maskImage
-        filter.backgroundImage = CIImage.empty() // Results in transparent background
+        filter.backgroundImage = CIImage.empty()
         
         guard let outputCIImage = filter.outputImage else { return nil }
         
-        let context = CIContext()
-        guard let outputCGImage = context.createCGImage(outputCIImage, from: outputCIImage.extent) else {
+        // 5. Render result back to UIImage
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        guard let outputCGImage = context.createCGImage(outputCIImage, from: ciImage.extent) else {
             return nil
         }
         
