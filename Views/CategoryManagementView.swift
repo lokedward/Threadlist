@@ -59,11 +59,11 @@ struct CategoryManagementView: View {
                         }
                     }
                 } header: {
-                    Text("COLLECTIONS")
+                    Text("CATEGORIES")
                         .font(.system(size: 10, weight: .bold))
                         .tracking(2)
                 } footer: {
-                    Text("DRAG TO REORDER. ITEMS FROM DELETED COLLECTIONS BECOME UNCATEGORIZED.")
+                    Text("DRAG TO REORDER. ITEMS FROM DELETED CATEGORIES BECOME UNCATEGORIZED.")
                         .font(.system(size: 9))
                         .tracking(1)
                 }

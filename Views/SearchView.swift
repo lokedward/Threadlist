@@ -75,7 +75,7 @@ struct SearchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("SEARCH COLLECTION")
+                Text("SEARCH WARDROBE")
                     .font(.system(size: 13, weight: .bold))
                     .tracking(2)
             }
@@ -194,7 +194,7 @@ struct SearchView: View {
                     .tracking(2)
                     .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                 
-                Text(searchText.isEmpty ? "Start typing to explore your collection" : "Try refining your search terms")
+                Text(searchText.isEmpty ? "Start typing to explore your wardrobe" : "Try refining your search terms")
                     .poshBody(size: 14)
                     .opacity(0.6)
             }

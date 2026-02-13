@@ -211,7 +211,7 @@ struct ItemDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("COLLECTION")
+                        Text("CATEGORY")
                             .font(.system(size: 10, weight: .bold))
                             .tracking(1)
                             .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))

@@ -54,7 +54,7 @@ struct WelcomeOnboardingView: View {
                                     .font(.system(size: 14, weight: .bold))
                                     .tracking(2)
                                 
-                                Text("We've drafted specialized shelves for your \(selected.lowercased()) collection.")
+                                Text("We've drafted specialized shelves for your \(selected.lowercased()) categories.")
                                     .poshBody(size: 14)
                                     .opacity(0.6)
                                     .multilineTextAlignment(.center)

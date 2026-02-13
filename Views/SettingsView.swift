@@ -190,7 +190,7 @@ struct SettingsView: View {
                                 
                                 Divider().opacity(0.5)
                                 
-                                PoshDetailRow(label: "COLLECTIONS", value: "\(allCategories.count)")
+                                PoshDetailRow(label: "CATEGORIES", value: "\(allCategories.count)")
                             }
                             .padding(20)
                             .background(Color.white)
@@ -210,7 +210,7 @@ struct SettingsView: View {
                                     exportData()
                                 } label: {
                                     HStack {
-                                        Label("EXPORT COLLECTION (JSON)", systemImage: "square.and.arrow.up")
+                                        Label("EXPORT CATEGORIES (JSON)", systemImage: "square.and.arrow.up")
                                             .font(.system(size: 13, weight: .semibold))
                                             .tracking(1)
                                         Spacer()
