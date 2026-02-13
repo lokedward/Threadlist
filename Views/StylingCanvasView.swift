@@ -139,8 +139,9 @@ struct StylingCanvasView: View {
                     Spacer()
                     
                     // Usage info
-                    if let remaining = stylistService.generationsRemaining {
-                        Text("\(remaining) free generations remaining today")
+                    if SubscriptionService.shared.currentTier == .free {
+                        let remaining = SubscriptionService.shared.currentTier.dailyStyleMeLimit - SubscriptionService.shared.generationCount
+                        Text("\(max(0, remaining)) free suggestions remaining today")
                             .poshBody(size: 12)
                             .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
                             .padding(.bottom, 8)
@@ -148,11 +149,15 @@ struct StylingCanvasView: View {
                     
                     // Generate Button
                     Button {
-                        generateLook()
+                        if SubscriptionService.shared.canPerformStyleMe() {
+                            generateLook()
+                        } else {
+                            showUpgradePrompt = true
+                        }
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "sparkles")
-                            Text(stylistService.userTier == .free ? "GENERATE LOOK (FREE)" : "GENERATE LOOK")
+                            Text(SubscriptionService.shared.currentTier == .free ? "GENERATE LOOK (FREE)" : "GENERATE LOOK")
                                 .tracking(2)
                         }
                         .frame(maxWidth: .infinity)
@@ -198,7 +203,7 @@ struct StylingCanvasView: View {
             }
         }
         .sheet(isPresented: $showUpgradePrompt) {
-            UpgradePromptView()
+            PaywallView()
         }
     }
     

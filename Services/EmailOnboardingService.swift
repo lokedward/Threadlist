@@ -21,9 +21,9 @@ class EmailOnboardingService: ObservableObject {
     
     /// Import wardrobe items from Gmail order confirmations
     /// Returns parsed products for user review (doesn't create ClothingItems yet)
-    func importFromGmail(timeRange: TimeRange, userTier: GenerationTier) async throws -> [EmailProductItem] {
+    func importFromGmail(timeRange: TimeRange) async throws -> [EmailProductItem] {
         // Validate tier access
-        guard canAccessTimeRange(timeRange, tier: userTier) else {
+        guard canAccessTimeRange(timeRange) else {
             throw EmailError.tierRestriction
         }
         
@@ -79,12 +79,13 @@ class EmailOnboardingService: ObservableObject {
     
     // MARK: - Tier Validation
     
-    func canAccessTimeRange(_ range: TimeRange, tier: GenerationTier) -> Bool {
-        switch (range, tier) {
+    func canAccessTimeRange(_ range: TimeRange) -> Bool {
+        let currentTier = SubscriptionService.shared.currentTier
+        switch (range, currentTier) {
         case (.sixMonths, _):
-            return true // Free tier can access 6 months
-        case (.twoYears, .premium), (.custom, .premium):
-            return true // Premium tier can access extended ranges
+            return true // Any tier can access 6 months
+        case (.twoYears, .boutique), (.twoYears, .atelier), (.custom, .boutique), (.custom, .atelier):
+            return true // Premium tiers can access extended ranges
         case (.twoYears, .free), (.custom, .free):
             return false // Free tier cannot access premium ranges
         }

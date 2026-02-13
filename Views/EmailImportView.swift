@@ -98,7 +98,7 @@ struct EmailImportView: View {
                 }
                 
                 Button {
-                    if userTier == .premium {
+                    if subscriptionService.currentTier != .free {
                         selectedRange = .twoYears
                         showingTimeRangeSelection = false
                         startImport()
@@ -110,7 +110,7 @@ struct EmailImportView: View {
                         range: .twoYears,
                         isSelected: selectedRange == .twoYears && !showingTimeRangeSelection,
                         isPremium: true,
-                        isLocked: userTier == .free
+                        isLocked: subscriptionService.currentTier == .free
                     )
                 }
             }
@@ -264,8 +264,7 @@ struct EmailImportView: View {
         Task {
             do {
                 importedItems = try await service.importFromGmail(
-                    timeRange: selectedRange,
-                    userTier: subscriptionService.currentTier == .atelier ? .premium : .free
+                    timeRange: selectedRange
                 )
                 showingReviewScreen = true
             } catch {

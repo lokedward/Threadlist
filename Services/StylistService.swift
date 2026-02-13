@@ -9,20 +9,10 @@ class StylistService {
     static let shared = StylistService()
     private init() {}
     
-    // MARK: - Usage Tracking
-    @AppStorage("dailyGenerationCount") private var dailyGenerationCount: Int = 0
-    @AppStorage("lastResetDate") private var lastResetDate: String = ""
-    @AppStorage("userTier") private var userTierRaw: String = "free"
-    
-    var userTier: GenerationTier {
-        get { userTierRaw == "premium" ? .premium : .free }
-        set { userTierRaw = newValue == .premium ? "premium" : "free" }
-    }
-    
+    // Limit checks are now handled via SubscriptionService.shared
     var generationsRemaining: Int? {
-        let limit = userTier == .premium ? 50 : 10
-        resetCountIfNeeded()
-        return max(0, limit - dailyGenerationCount)
+        let limit = SubscriptionService.shared.currentTier.dailyStyleMeLimit
+        return max(0, limit - SubscriptionService.shared.generationCount)
     }
     
     // MARK: - Magic Fill (Metadata Enrichment)
@@ -138,7 +128,7 @@ class StylistService {
         guard !items.isEmpty else { throw StylistError.noItemsSelected }
         
         // Check usage limits
-        if let remaining = generationsRemaining, remaining <= 0 {
+        if !SubscriptionService.shared.canPerformStyleMe() {
             throw StylistError.limitReached
         }
         
@@ -175,7 +165,7 @@ class StylistService {
             // Cache the final result
             OutfitCacheService.shared.cacheImage(resultImage, for: items, gender: gender)
             
-            incrementGenerationCount()
+            SubscriptionService.shared.recordGeneration()
             return resultImage
         } catch {
             print("❌ Image generation failed with error: \(error.localizedDescription)")
@@ -335,24 +325,6 @@ class StylistService {
     
     // MARK: - Helpers
     
-    private func resetCountIfNeeded() {
-        let currentDay = currentDayKey()
-        if lastResetDate != currentDay {
-            dailyGenerationCount = 0
-            lastResetDate = currentDay
-        }
-    }
-    
-    private func currentDayKey() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: Date())
-    }
-    
-    private func incrementGenerationCount() {
-        resetCountIfNeeded()
-        dailyGenerationCount += 1
-    }
 }
 
 
