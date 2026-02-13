@@ -167,13 +167,9 @@ struct CropView: View {
         
         // 3. Calculate Min Scale (Aspect Fit)
         // This allows us to zoom out until the whole image is visible inside the crop box
-        if imgRatio > cropRatio {
-            // Image is wider -> Min scale is when width fits
-            minScale = cropSize.width / imageSize.width
-        } else {
-            // Image is taller -> Min scale is when height fits
-            minScale = cropSize.height / imageSize.height
-        }
+        // 3. Set Min Scale to 1.0 for Aspect Fill
+        // This ensures the image always covers the crop box entirely
+        minScale = 1.0
         
         // 4. Reset State
         scale = 1.0
