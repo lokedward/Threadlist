@@ -140,7 +140,7 @@ struct StylingCanvasView: View {
                     
                     // Usage info
                     if SubscriptionService.shared.currentTier == .free {
-                        let remaining = SubscriptionService.shared.currentTier.dailyStyleMeLimit - SubscriptionService.shared.generationCount
+                        let remaining = SubscriptionService.shared.currentTier.styleMeLimit - SubscriptionService.shared.generationCount
                         Text("\(max(0, remaining)) free suggestions remaining today")
                             .poshBody(size: 12)
                             .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
