@@ -50,7 +50,6 @@ struct AddItemView: View {
     @State private var emailItemsQueue: [EmailProductItem] = []
     @State private var isLoadingEmailImage = false
     @State private var showingSaveAlert = false
-    @State private var autoRemoveBackground = true
     
     var canSave: Bool {
         let hasImage = additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty
@@ -94,8 +93,7 @@ struct AddItemView: View {
                 onSave: { saveItem() },
                 onCropComplete: { img in selectedImage = img },
                 onSkip: skipAction,
-                onCancel: cancelAction,
-                autoRemoveBackground: $autoRemoveBackground
+                onCancel: cancelAction
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -129,8 +127,7 @@ struct AddItemView: View {
                     bulkImageQueue = imgs
                     totalBulkItems = imgs.count
                     isMetadataExpanded = true
-                },
-                autoRemoveBackground: $autoRemoveBackground
+                }
             ))
             .overlay {
                 if isProcessingImage {
@@ -316,7 +313,6 @@ struct MainFormView: View {
     let onCropComplete: (UIImage) -> Void
     var onSkip: (() -> Void)? = nil
     var onCancel: (() -> Void)? = nil
-    @Binding var autoRemoveBackground: Bool
     
     var body: some View {
         ZStack {
@@ -330,19 +326,6 @@ struct MainFormView: View {
                             ForEach(AddItemView.AdditionMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                         }
                         .pickerStyle(.segmented).padding(.horizontal, 40)
-                        
-                        Toggle(isOn: $autoRemoveBackground) {
-                            HStack {
-                                Image(systemName: "wand.and.stars")
-                                    .foregroundColor(PoshTheme.Colors.ink)
-                                Text("CLEAN BACKGROUND")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .tracking(2)
-                                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
-                            }
-                        }
-                        .toggleStyle(SwitchToggleStyle(tint: PoshTheme.Colors.ink))
-                        .padding(.horizontal, 40)
                         
                         if additionMode == .multiple && bulkImageQueue.isEmpty {
                             BulkEmptyStateView(onOpenGallery: onOpenBulkGallery)
@@ -571,7 +554,6 @@ struct AddItemPickerModifiers: ViewModifier {
     let onInitialImage: (UIImage) -> Void
     let onFinalImage: (UIImage) -> Void
     let onBulkProcessed: ([UIImage]) -> Void
-    @Binding var autoRemoveBackground: Bool
     
     func body(content: Content) -> some View {
         content
@@ -615,16 +597,8 @@ struct AddItemPickerModifiers: ViewModifier {
         Task.detached(priority: .userInitiated) {
             if let data = try? await item.loadTransferable(type: Data.self),
                let img = UIImage.downsample(imageData: data, to: CGSize(width: 1500, height: 1500)) {
-                
-                var finalImg = img
-                if self.autoRemoveBackground {
-                    if let cleaned = try? await img.removeBackground() {
-                        finalImg = cleaned
-                    }
-                }
-
                 await MainActor.run {
-                    self.onInitialImage(finalImg)
+                    self.onInitialImage(img)
                     self.selectedPhotoItem = nil
                     self.isProcessingImage = false
                 }
@@ -644,14 +618,7 @@ struct AddItemPickerModifiers: ViewModifier {
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self),
                    let img = UIImage.downsample(imageData: data, to: CGSize(width: 1500, height: 1500)) {
-                    
-                    var finalImg = img
-                    if self.autoRemoveBackground {
-                        if let cleaned = try? await img.removeBackground() {
-                            finalImg = cleaned
-                        }
-                    }
-                    images.append(finalImg)
+                    images.append(img)
                 }
             }
             await MainActor.run {
