@@ -13,14 +13,16 @@ struct LoadingMessageService {
     }
     
     private let magicFillMessages = [
-        "Sizing things up...",
-        "Identifying these threads...",
-        "Analyzing the weave...",
-        "Checking the labels...",
-        "Measuring twice, processing once...",
-        "Giving these garments an identity...",
-        "Consulting the tailoring gods...",
-        "Cataloging your collection..."
+        "Deciphering your denim DNA...",
+        "Thread-counting the details...",
+        "Digitizing your drapes...",
+        "Sizing up the situation...",
+        "Fabric-ating the facts...",
+        "Untangling the metadata...",
+        "Giving your gear a digital glow-up...",
+        "Tailoring the data...",
+        "Reading between the seams...",
+        "Spotting the silhouettes..."
     ]
     
     private let generationMessages = [
