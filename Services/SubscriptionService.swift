@@ -12,7 +12,7 @@ enum SubscriptionTier: String, Codable, CaseIterable {
     
     var wardrobeLimit: Int? {
         switch self {
-        case .free: return 10
+        case .free: return 40
         case .boutique, .atelier: return nil // Unlimited
         }
     }
