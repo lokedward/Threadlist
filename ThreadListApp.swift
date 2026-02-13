@@ -3,7 +3,7 @@
 
 import SwiftUI
 import SwiftData
-import GoogleSignIn
+// import GoogleSignIn
 
 @main
 struct ThreadListApp: App {
@@ -29,20 +29,24 @@ struct ThreadListApp: App {
     }()
     
     init() {
+        /*
         // Restore previous Google Sign-In state
         GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
             if let error = error {
                 print("Google Sign-In restore failed: \(error.localizedDescription)")
             }
         }
+        */
     }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                /*
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
                 }
+                */
         }
         .modelContainer(sharedModelContainer)
     }

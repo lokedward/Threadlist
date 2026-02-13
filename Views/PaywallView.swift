@@ -68,7 +68,7 @@ struct PaywallView: View {
             benefitRow(icon: "infinity", title: "Unlimited Wardrobe", subtitle: "Digitize every piece, from couture to core.")
             benefitRow(icon: "sparkles", title: "Smart Magic Fill", subtitle: "Instant AI enrichment for all your garments.")
             benefitRow(icon: "wand.and.stars", title: "Photorealistic Outfits", subtitle: "Unlimited AI model looks for every occasion.")
-            benefitRow(icon: "envelope.fill", title: "Automatic Imports", subtitle: "Scan your inbox for seamless wardrobe tracking.")
+//            benefitRow(icon: "envelope.fill", title: "Automatic Imports", subtitle: "Scan your inbox for seamless wardrobe tracking.")
         }
         .padding(.horizontal, 30)
     }

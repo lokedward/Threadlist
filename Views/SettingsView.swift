@@ -108,6 +108,7 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.plain)
                             
+                            /*
                             // Email Import Button
                             Button {
                                 if SubscriptionService.shared.currentTier.canImportEmail {
@@ -137,6 +138,7 @@ struct SettingsView: View {
                                 .cornerRadius(12)
                             }
                             .buttonStyle(.plain)
+                            */
                         }
                         .padding(.horizontal)
                         
@@ -274,9 +276,11 @@ struct SettingsView: View {
                     ShareSheet(activityItems: [url])
                 }
             }
+            /*
             .sheet(isPresented: $showingEmailImport) {
                 EmailImportView()
             }
+            */
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }

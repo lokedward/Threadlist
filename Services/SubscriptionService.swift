@@ -43,9 +43,11 @@ enum SubscriptionTier: String, Codable, CaseIterable {
         case daily, monthly
     }
     
+/*
     var canImportEmail: Bool {
         self != .free
     }
+*/
 }
 
 @MainActor
