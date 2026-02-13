@@ -154,22 +154,21 @@ struct CropView: View {
         let cropRatio = cropSize.width / cropSize.height
         
         if imgRatio > cropRatio {
-            // Image is wider than crop -> Fit Width, Scale Height (Aspect Fit)
-            let width = cropSize.width
-            let height = width / imgRatio
-            imageSize = CGSize(width: width, height: height)
-        } else {
-            // Image is taller -> Fit Height, Scale Width (Aspect Fit)
+            // Image is wider than crop -> Fit Height, Scale Width
             let height = cropSize.height
             let width = height * imgRatio
+            imageSize = CGSize(width: width, height: height)
+        } else {
+            // Image is taller -> Fit Width, Scale Height
+            let width = cropSize.width
+            let height = width / imgRatio
             imageSize = CGSize(width: width, height: height)
         }
         
         // 3. Calculate Min Scale (Aspect Fit)
         // This allows us to zoom out until the whole image is visible inside the crop box
-        // 3. Set Min Scale to 1.0
-        // Because we calculated imageSize as "Aspect Fit", 1.0 is the point 
-        // where the full image is visible. We don't want to zoom out any further.
+        // 3. Set Min Scale to 1.0 for Aspect Fill
+        // This ensures the image always covers the crop box entirely
         minScale = 1.0
         
         // 4. Reset State
