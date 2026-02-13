@@ -74,16 +74,15 @@ struct ContentView: View {
             }
             .tag(2)
             
-            // Tab 4: Account
             NavigationStack {
                 SettingsView()
-                    .navigationTitle("Account")
+                    .navigationTitle("Settings")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar(.hidden, for: .navigationBar)
             }
             .tabItem {
-                Image(systemName: "person")
-                Text("Account")
+                Image(systemName: "gearshape")
+                Text("Settings")
             }
             .tag(3)
         }
