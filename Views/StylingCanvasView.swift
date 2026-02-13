@@ -12,6 +12,7 @@ struct StylingCanvasView: View {
     @State private var generatedImage: UIImage?
     @State private var isGenerating = false
     @State private var errorMessage: String?
+    @State private var isSaved = false
     @State private var showUpgradePrompt = false
     
     let stylistService = StylistService.shared
@@ -45,6 +46,7 @@ struct StylingCanvasView: View {
                     HStack(spacing: 16) {
                         Button {
                             generatedImage = nil
+                            isSaved = false
                         } label: {
                             VStack(spacing: 4) {
                                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -64,19 +66,20 @@ struct StylingCanvasView: View {
                             saveOutfit()
                         } label: {
                             VStack(spacing: 4) {
-                                Image(systemName: "heart")
+                                Image(systemName: isSaved ? "heart.fill" : "heart")
                                     .font(.system(size: 20))
-                                Text("SAVE LOOK")
+                                Text(isSaved ? "SAVED" : "SAVE LOOK")
                                     .font(.system(size: 10, weight: .bold))
                                     .tracking(1.5)
                             }
                             .foregroundColor(Color.white) // Use direct white
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(PoshTheme.Colors.ink)
+                            .background(isSaved ? PoshTheme.Colors.ink.opacity(0.5) : PoshTheme.Colors.ink)
                             .cornerRadius(0) // Posh style
                             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                         }
+                        .disabled(isSaved)
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
@@ -211,6 +214,7 @@ struct StylingCanvasView: View {
                     withAnimation(.spring()) {
                         generatedImage = image
                         isGenerating = false
+                        isSaved = false
                     }
                 }
             } catch {
@@ -235,8 +239,7 @@ struct StylingCanvasView: View {
                 modelContext.insert(outfit)
                 
                 await MainActor.run {
-                    generatedImage = nil
-                    // Ideally show success toast
+                    isSaved = true
                 }
             }
         }
