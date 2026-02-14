@@ -87,20 +87,56 @@ struct StylingCanvasView: View {
                     .padding(.horizontal)
                     .padding(.bottom)
                 }
-            } else if selectedItems.isEmpty {
-                // Empty state
-                VStack(spacing: 40) {
-                    Spacer()
+            } else if selectedItems.isEmpty || !isGenerating {
+                // Combined state for Empty and Ready to Generate to ensure layout stability
+                ZStack {
+                    // Central Brand Piece - anchored so it never shifts
+                    VStack(spacing: 24) {
+                        BrandLogoView(isAnimating: selectedItems.isEmpty)
+                            .frame(width: 140, height: 140)
+                        
+                        if selectedItems.isEmpty {
+                            Text("SELECT PIECES TO START STYLING")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(3)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+                                .transition(.opacity)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
-                    BrandLogoView(isAnimating: true)
-                        .frame(width: 120, height: 120)
-                    
-                    Text("SELECT PIECES TO START STYLING")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(3)
-                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
-                    
-                    Spacer()
+                    // Bottom Controls - anchored to bottom, won't affect central piece
+                    if !selectedItems.isEmpty {
+                        VStack(spacing: 16) {
+                            Spacer()
+                            
+                            if SubscriptionService.shared.currentTier == .free {
+                                let remaining = SubscriptionService.shared.currentTier.styleMeLimit - SubscriptionService.shared.generationCount
+                                Text("\(max(0, remaining)) free suggestions remaining today")
+                                    .poshBody(size: 12)
+                                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
+                            }
+                            
+                            Button {
+                                if SubscriptionService.shared.canPerformStyleMe() {
+                                    generateLook()
+                                } else {
+                                    showUpgradePrompt = true
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "sparkles")
+                                    Text(SubscriptionService.shared.currentTier == .free ? "GENERATE LOOK (FREE)" : "GENERATE LOOK")
+                                        .tracking(2)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .poshButton()
+                        }
+                        .padding(.horizontal, 40)
+                        .padding(.bottom, 20)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
             } else if isGenerating {
                 // Loading state
@@ -125,44 +161,6 @@ struct StylingCanvasView: View {
                 .background(Color.white.opacity(0.9))
                 .poshCard()
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            } else {
-                // Ready to generate - show mannequin + button
-                VStack(spacing: 50) {
-                    Spacer()
-                    
-                    BrandLogoView(isAnimating: false)
-                        .frame(width: 160, height: 160)
-                    
-                    Spacer()
-                    
-                    // Usage info
-                    if SubscriptionService.shared.currentTier == .free {
-                        let remaining = SubscriptionService.shared.currentTier.styleMeLimit - SubscriptionService.shared.generationCount
-                        Text("\(max(0, remaining)) free suggestions remaining today")
-                            .poshBody(size: 12)
-                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
-                            .padding(.bottom, 8)
-                    }
-                    
-                    // Generate Button
-                    Button {
-                        if SubscriptionService.shared.canPerformStyleMe() {
-                            generateLook()
-                        } else {
-                            showUpgradePrompt = true
-                        }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "sparkles")
-                            Text(SubscriptionService.shared.currentTier == .free ? "GENERATE LOOK (FREE)" : "GENERATE LOOK")
-                                .tracking(2)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .poshButton()
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 20)
-                }
             }
             
             // Error overlay
