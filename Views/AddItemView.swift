@@ -427,12 +427,22 @@ struct MainFormView: View {
 
                                 }
                                 
+                                if (additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty) {
+                                    Button(action: onMagicFill) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "sparkles")
+                                            Text("AI AUTO-FILL")
+                                            Image(systemName: "sparkles")
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                    }
+                                    .poshMagicButton()
+                                }
+                                
                                 DetailsSectionView(
                                     name: $name, category: $selectedCategory, brand: $brand,
                                     size: $size, tagsText: $tagsText, isExpanded: $isMetadataExpanded,
-                                    showExpandButton: additionMode == .multiple, categories: categories,
-                                    onMagicFill: onMagicFill,
-                                    canMagicFill: (additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty)
+                                    showExpandButton: additionMode == .multiple, categories: categories
                                 )
                                 
                                 Button(action: {
@@ -536,28 +546,12 @@ struct DetailsSectionView: View {
     @Binding var isExpanded: Bool
     let showExpandButton: Bool
     let categories: [Category]
-    let onMagicFill: () -> Void
-    let canMagicFill: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Text("Item Details").poshHeadline(size: 20)
                 Spacer()
-                
-                if canMagicFill {
-                    Button(action: onMagicFill) {
-                        HStack(spacing: 6) {
-                            Text("MAGIC FILL").font(.system(size: 9, weight: .bold)).tracking(1)
-                            Image(systemName: "sparkles")
-                        }
-                        .foregroundColor(PoshTheme.Colors.ink)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                        .background(PoshTheme.Colors.ink.opacity(0.05))
-                        .clipShape(Capsule())
-                    }
-                }
                 
                 if showExpandButton {
                     Button { withAnimation { isExpanded.toggle() } } label: {

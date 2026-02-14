@@ -72,6 +72,31 @@ struct PoshButtonModifier: ViewModifier {
     }
 }
 
+struct PoshMagicButtonModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: 13, weight: .bold))
+            .tracking(2)
+            .foregroundColor(PoshTheme.Colors.ink)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 24)
+            .background(
+                ZStack {
+                    Color.white
+                    PoshTheme.Colors.gold.opacity(0.1)
+                }
+            )
+            .overlay(
+                Rectangle()
+                    .stroke(PoshTheme.Colors.gold, lineWidth: 1)
+            )
+            .simultaneousGesture(TapGesture().onEnded { _ in
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+            })
+    }
+}
+
 extension View {
     func poshCard() -> some View {
         modifier(PoshCardModifier())
@@ -79,6 +104,10 @@ extension View {
     
     func poshButton() -> some View {
         modifier(PoshButtonModifier())
+    }
+    
+    func poshMagicButton() -> some View {
+        modifier(PoshMagicButtonModifier())
     }
     
     func poshHeadline(size: CGFloat = 24) -> some View {
