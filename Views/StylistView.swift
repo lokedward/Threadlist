@@ -8,6 +8,8 @@ struct StylistView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ClothingItem.dateAdded, order: .reverse) private var items: [ClothingItem]
     
+    @ObservedObject private var subscription = SubscriptionService.shared
+    
     @State private var selectedItems: Set<UUID> = []
     @State private var showingSelection = true
     @State private var selectedTab: StylistTab = .closet
@@ -181,6 +183,24 @@ struct StylistView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text("THE STUDIO").poshHeadline(size: 18)
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 10))
+                        .foregroundColor(PoshTheme.Colors.gold)
+                    
+                    Text("\(subscription.remainingGenerations)")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(PoshTheme.Colors.ink)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .stroke(PoshTheme.Colors.gold.opacity(0.2), lineWidth: 1)
+                )
             }
         }
     }

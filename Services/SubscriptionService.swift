@@ -57,6 +57,7 @@ class SubscriptionService: ObservableObject {
     @Published private(set) var currentTier: SubscriptionTier = .free
     @Published private(set) var magicFillCount = 0
     @Published private(set) var generationCount = 0
+    @Published private(set) var monthlyGenerationCount = 0
     
     private let tierKey = "userSubscriptionTier"
     private let magicFillKey = "dailyMagicFillCount"
@@ -72,8 +73,15 @@ class SubscriptionService: ObservableObject {
         
         self.magicFillCount = UserDefaults.standard.integer(forKey: magicFillKey)
         self.generationCount = UserDefaults.standard.integer(forKey: generationKey)
+        self.monthlyGenerationCount = UserDefaults.standard.integer(forKey: monthlyGenerationKey)
         
         checkAndResetLimits()
+    }
+    
+    var remainingGenerations: Int {
+        let limit = currentTier.styleMeLimit
+        let used = currentTier.limitPeriod == .monthly ? monthlyGenerationCount : generationCount
+        return max(0, limit - used)
     }
     
     // MARK: - Limit Checks
@@ -96,18 +104,15 @@ class SubscriptionService: ObservableObject {
     func canPerformStyleMe() -> Bool {
         checkAndResetLimits()
         if currentTier.limitPeriod == .monthly {
-            let count = UserDefaults.standard.integer(forKey: monthlyGenerationKey)
-            return count < currentTier.styleMeLimit
+            return monthlyGenerationCount < currentTier.styleMeLimit
         } else {
             return generationCount < currentTier.styleMeLimit
-        }
     }
     
     func recordGeneration() {
         if currentTier.limitPeriod == .monthly {
-            var count = UserDefaults.standard.integer(forKey: monthlyGenerationKey)
-            count += 1
-            UserDefaults.standard.set(count, forKey: monthlyGenerationKey)
+            monthlyGenerationCount += 1
+            UserDefaults.standard.set(monthlyGenerationCount, forKey: monthlyGenerationKey)
         } else {
             generationCount += 1
             UserDefaults.standard.set(generationCount, forKey: generationKey)
@@ -142,6 +147,7 @@ class SubscriptionService: ObservableObject {
         // Monthly Reset (Every 30 days or same day of month)
         let thirtyDays: TimeInterval = 30 * 24 * 60 * 60
         if now.timeIntervalSince(lastMonthlyReset) > thirtyDays {
+            monthlyGenerationCount = 0
             UserDefaults.standard.set(0, forKey: monthlyGenerationKey)
             UserDefaults.standard.set(now.timeIntervalSince1970, forKey: monthlyResetKey)
         }

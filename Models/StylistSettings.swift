@@ -124,6 +124,12 @@ struct StylingTabView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                Text("Define your vibe and let our AI stylist curate the perfect ensemble for you.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .italic()
+                    .padding(.bottom, -5)
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text("TARGET OCCASION")
                         .font(.system(size: 10, weight: .bold))
