@@ -106,7 +106,7 @@ extension View {
         modifier(PoshButtonModifier())
     }
     
-    func poshMagicButton() -> some View {
+    func poshCTA() -> some View {
         modifier(PoshMagicButtonModifier())
     }
     

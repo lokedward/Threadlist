@@ -436,7 +436,7 @@ struct MainFormView: View {
                                         }
                                         .frame(maxWidth: .infinity)
                                     }
-                                    .poshMagicButton()
+                                    .poshCTA()
                                 }
                                 
                                 DetailsSectionView(
