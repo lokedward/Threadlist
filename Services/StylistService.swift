@@ -145,6 +145,10 @@ class StylistService {
         let response = try await callGemini(model: "gemini-2.5-flash", prompt: prompt, images: nil, responseType: .text)
         
         // 4. Parse Response
+        let cleanedJSON = response
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
             
         guard let jsonData = cleanedJSON.data(using: .utf8) else {
             throw StylistError.invalidResponse
