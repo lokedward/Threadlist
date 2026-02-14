@@ -14,6 +14,9 @@ struct StylingCanvasView: View {
     @Binding var isGenerating: Bool
     @Binding var isSaved: Bool
     
+    @State private var errorMessage: String?
+    @State private var showUpgradePrompt = false
+    @State private var dynamicLoadingMessage = "CREATING YOUR LOOK"
     @State private var lastGeneratedItemIds: Set<UUID> = []
     
     let stylistService = StylistService.shared
