@@ -129,9 +129,13 @@ struct StylingCanvasView: View {
                 VStack {
                     Spacer()
                     
-                    // Model placeholder
-                    StudioModelPlaceholder(gender: gender)
-                        .padding(.vertical, 20)
+                    // Artistic placeholder
+                    Image(systemName: "paintbrush.pointed")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 120)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.15))
+                        .padding(.bottom, 40)
                     
                     Spacer()
                     
@@ -365,118 +369,6 @@ struct FeatureRow: View {
             
             Text(text)
                 .poshBody(size: 14)
-        }
-    }
-}
-
-// MARK: - Premium Placeholder Components
-
-struct StudioModelPlaceholder: View {
-    let gender: Gender
-    
-    var body: some View {
-        ZStack {
-            // Studio Backdrop
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [PoshTheme.Colors.ink.opacity(0.04), .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 180
-                    )
-                )
-                .frame(width: 320, height: 320)
-            
-            VStack(spacing: 0) {
-                // Mannequin Head/Neck (Minimalist croquis style)
-                Circle()
-                    .stroke(PoshTheme.Colors.ink.opacity(0.1), lineWidth: 1.5)
-                    .frame(width: 30, height: 30)
-                
-                Rectangle()
-                    .fill(PoshTheme.Colors.ink.opacity(0.1))
-                    .frame(width: 1.5, height: 15)
-                
-                // The Silhouette
-                Image(systemName: gender == .female ? "figure.stand.dress" : "figure.stand")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 260)
-                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.06))
-                    .overlay {
-                        // Subtle editorial highlight line
-                        HStack {
-                            Spacer()
-                            Rectangle()
-                                .fill(PoshTheme.Colors.gold.opacity(0.2))
-                                .frame(width: 0.5)
-                                .padding(.vertical, 40)
-                            Spacer()
-                                .frame(width: 40)
-                        }
-                    }
-                
-                // Floor Stand
-                VStack(spacing: 4) {
-                    Rectangle()
-                        .fill(PoshTheme.Colors.ink.opacity(0.1))
-                        .frame(width: 1.5, height: 30)
-                    
-                    Capsule()
-                        .fill(PoshTheme.Colors.ink.opacity(0.12))
-                        .frame(width: 60, height: 3)
-                }
-            }
-            .offset(y: -10)
-            
-            // Photostatic Viewfinder Brackets
-            ViewfinderBrackets()
-                .frame(width: 220, height: 320)
-                .foregroundColor(PoshTheme.Colors.ink.opacity(0.15))
-        }
-        .frame(height: 350)
-    }
-}
-
-struct ViewfinderBrackets: View {
-    var body: some View {
-        ZStack {
-            VStack {
-                HStack {
-                    Corner(rotation: 0)
-                    Spacer()
-                    Corner(rotation: 90)
-                }
-                Spacer()
-                HStack {
-                    Corner(rotation: -90)
-                    Spacer()
-                    Corner(rotation: 180)
-                }
-            }
-            
-            // Center crosshair
-            Rectangle()
-                .fill(PoshTheme.Colors.gold.opacity(0.2))
-                .frame(width: 10, height: 0.5)
-            Rectangle()
-                .fill(PoshTheme.Colors.gold.opacity(0.2))
-                .frame(width: 0.5, height: 10)
-        }
-    }
-    
-    struct Corner: View {
-        let rotation: Double
-        var body: some View {
-            Path { path in
-                path.move(to: CGPoint(x: 0, y: 15))
-                path.addLine(to: CGPoint(x: 0, y: 0))
-                path.addLine(to: CGPoint(x: 15, y: 0))
-            }
-            .stroke(lineWidth: 1)
-            .frame(width: 15, height: 15)
-            .rotationEffect(.degrees(rotation))
         }
     }
 }

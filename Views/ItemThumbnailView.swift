@@ -45,21 +45,21 @@ struct ItemThumbnailView: View {
             if showLabel {
                 VStack {
                     Spacer()
-                    VStack(alignment: .leading, spacing: 1) {
+                    VStack(alignment: .leading, spacing: 2) {
                         if let brand = item.brand, !brand.isEmpty {
                             Text(brand.uppercased())
-                                .font(.system(size: 7, weight: .bold))
+                                .font(.system(size: 8, weight: .bold))
                                 .tracking(1)
                                 .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
                                 .lineLimit(1)
                         }
                         
                         Text(item.name)
-                            .poshHeadline(size: 10)
+                            .poshHeadline(size: 13)
                             .foregroundColor(PoshTheme.Colors.headline.opacity(0.85))
                             .lineLimit(1)
                     }
-                    .padding(6)
+                    .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.white.opacity(0.85))
                     .background(.ultraThinMaterial)
