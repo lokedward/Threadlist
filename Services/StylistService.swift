@@ -110,34 +110,41 @@ class StylistService {
             """
         }.joined(separator: "\n")
         
-        // 2. Build Prompt
+        // 2. Fetch Active Session Parameters
+        let vibe = UserDefaults.standard.string(forKey: "stylistStyleVibe") ?? StyleVibe.timeless.rawValue
+        let density = UserDefaults.standard.string(forKey: "stylistDensity") ?? StylingDensity.balanced.rawValue
+        let mood = UserDefaults.standard.string(forKey: "stylistMood") ?? ""
+        
+        // 3. Build Prompt
         let prompt = """
-        You are a high-end personal stylist. 
-        Target Occasion: \(occasion)
+        You are a high-end personal stylist for a premium fashion app.
         
-        Below is the user's closet (metadata only). 
-        Pick the BEST combination of items for this occasion. 
-        Aim for a complete look: one top, one bottom, one pair of shoes, and optional accessory/outerwear.
+        GOAL: Pick the BEST outfit from the user's closet.
         
-        Output only a JSON object:
-        {
-          "ids": ["UUID-1", "UUID-2"],
-          "explanation": "A very brief (1 sentence) explanation of why this look works for the occasion."
-        }
+        TARGET PARAMETERS:
+        - Occasion: \(occasion)
+        - Desired Vibe: \(vibe)
+        - Styling Complexity: \(density)
+        \(mood.isEmpty ? "" : "- Additional Mood/Inspiration: \(mood)")
         
         USER CLOSET:
         \(itemsInfo)
         
-        Return pure JSON only.
+        INSTRUCTIONS:
+        1. Select a complete look: one top, one bottom, one pair of shoes, and optional accessory/outerwear if density allows.
+        2. Strictly follow the density: "Minimalist" means fewer basics; "Layered" means more accessories and outerwear.
+        3. Output only a JSON object:
+        {
+          "ids": ["UUID-1", "UUID-2"],
+          "explanation": "A very brief (1 sentence) stylish explanation of why this look fits the requested vibe and occasion."
+        }
+        
+        Return pure JSON only. NO MARKDOWN.
         """
         
         let response = try await callGemini(model: "gemini-2.5-flash", prompt: prompt, images: nil, responseType: .text)
         
-        // 3. Parse Response
-        let cleanedJSON = response
-            .replacingOccurrences(of: "```json", with: "")
-            .replacingOccurrences(of: "```", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // 4. Parse Response
             
         guard let jsonData = cleanedJSON.data(using: .utf8) else {
             throw StylistError.invalidResponse

@@ -21,9 +21,9 @@ struct PoshTheme {
         static let uiCanvas: UIColor = UIColor(white: 0.99, alpha: 1.0)
         static let uiGold: UIColor = UIColor(red: 0.83, green: 0.68, blue: 0.21, alpha: 1.0)
         
-        // Text - Mapped to Ink
-        static let headline: Color = ink
-        static let body: Color = ink.opacity(0.8)
+        static let body: Font.Color = ink.opacity(0.8)
+        
+        static let aiGlow: Color = gold.opacity(0.3)
     }
     
     // MARK: - Typography
@@ -91,6 +91,11 @@ extension View {
     func poshBody(size: CGFloat = 16, weight: Font.Weight = .light) -> some View {
         self.font(PoshTheme.Typography.body(size: size, weight: weight))
             .foregroundColor(PoshTheme.Colors.body)
+    }
+    
+    func goldGlow() -> some View {
+        self.shadow(color: PoshTheme.Colors.gold.opacity(0.5), radius: 10, x: 0, y: 0)
+            .shadow(color: PoshTheme.Colors.gold.opacity(0.3), radius: 20, x: 0, y: 0)
     }
 }
 

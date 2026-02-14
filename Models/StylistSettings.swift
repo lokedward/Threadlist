@@ -81,6 +81,25 @@ enum StylistOccasion: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum StyleVibe: String, CaseIterable, Identifiable {
+    case minimalist = "Minimalist"
+    case avantGarde = "Avant-Garde"
+    case timeless = "Timeless"
+    case streetStyle = "Street Style"
+    case boho = "Bohemian"
+    case elegant = "Elegant"
+    
+    var id: String { rawValue }
+}
+
+enum StylingDensity: String, CaseIterable, Identifiable {
+    case simple = "Minimalist/Simple"
+    case balanced = "Balanced"
+    case layered = "Layered/Complex"
+    
+    var id: String { rawValue }
+}
+
 // MARK: - Settings View
 
 struct StylistSettingsView: View {
@@ -131,31 +150,6 @@ struct StylistSettingsView: View {
                 TextField("E.g. 90s Disco Party", text: $customOccasion)
                     .font(.system(size: 15))
             }
-            
-            VStack(alignment: .leading, spacing: 12) {
-                Text("The Stylist will prioritize items in your closet that fit this vibe, try our smart stylist feature below:")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                
-                Button {
-                    dismiss()
-                    onStyleMe?()
-                } label: {
-                    HStack(spacing: 8) {
-                        Text("STYLE ME!")
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(2)
-                        Image(systemName: "sparkles")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(PoshTheme.Colors.ink)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.vertical, 8)
         }
         .listRowBackground(Color.white)
     }
@@ -221,6 +215,99 @@ struct StylistSettingsView: View {
     }
 }
 
+// MARK: - AI Stylist Popup View
+
+struct StylistAIPopupView: View {
+    @AppStorage("stylistOccasion") private var occasionRaw = StylistOccasion.casual.rawValue
+    @AppStorage("stylistCustomOccasion") private var customOccasion = ""
+    @AppStorage("stylistStyleVibe") private var vibeRaw = StyleVibe.timeless.rawValue
+    @AppStorage("stylistDensity") private var densityRaw = StylingDensity.balanced.rawValue
+    @AppStorage("stylistMood") private var mood = ""
+    
+    var onStyleMe: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("AI STYLIST")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(2)
+                            .foregroundColor(PoshTheme.Colors.gold)
+                        
+                        Text("Craft your perfect look with AI intelligence.")
+                            .poshBody(size: 14)
+                            .opacity(0.6)
+                    }
+                    .padding(.vertical, 8)
+                }
+                .listRowBackground(Color.clear)
+                
+                Section("OCCASION") {
+                    Picker("Occasion", selection: $occasionRaw) {
+                        ForEach(StylistOccasion.allCases) { occ in
+                            Text(occ.rawValue).tag(occ.rawValue)
+                        }
+                    }
+                    
+                    if occasionRaw == StylistOccasion.custom.rawValue {
+                        TextField("E.g. Vintage Italian Summer", text: $customOccasion)
+                    }
+                }
+                
+                Section("STYLE PARAMETERS") {
+                    Picker("Vibe", selection: $vibeRaw) {
+                        ForEach(StyleVibe.allCases) { vibe in
+                            Text(vibe.rawValue).tag(vibe.rawValue)
+                        }
+                    }
+                    
+                    Picker("Density", selection: $densityRaw) {
+                        ForEach(StylingDensity.allCases) { density in
+                            Text(density.rawValue).tag(density.rawValue)
+                        }
+                    }
+                }
+                
+                Section("MOOD (OPTIONAL)") {
+                    TextField("E.g. monochromatic colors, oversized fit...", text: $mood, axis: .vertical)
+                        .lineLimit(2...4)
+                }
+                
+                Section {
+                    Button(action: {
+                        dismiss()
+                        onStyleMe()
+                    }) {
+                        HStack {
+                            Image(systemName: "sparkles")
+                            Text("STYLE ME NOW")
+                                .tracking(2)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .poshButton()
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .padding(.top, 12)
+            }
+            .scrollContentBackground(.hidden)
+            .background(PoshTheme.Colors.canvas)
+            .navigationTitle("Magic Stylist")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                        .foregroundColor(PoshTheme.Colors.ink)
+                }
+            }
+        }
+    }
+}
+
 #Preview {
-    StylistSettingsView()
+    StylistAIPopupView(onStyleMe: {})
 }

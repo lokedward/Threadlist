@@ -9,9 +9,6 @@ struct StylistView: View {
     @Query(sort: \ClothingItem.dateAdded, order: .reverse) private var items: [ClothingItem]
     
     @State private var selectedItems: Set<UUID> = []
-    @State private var showingSelection = true
-    @AppStorage("stylistModelGender") private var genderRaw = "female"
-    @State private var showSettings = false
     
     // AI Suggestion State
     @AppStorage("stylistOccasion") private var occasionRaw = StylistOccasion.casual.rawValue
@@ -48,6 +45,27 @@ struct StylistView: View {
                     isSaved: $isSaved
                 )
                 .frame(maxHeight: .infinity)
+                .overlay(alignment: .bottomTrailing) {
+                    if !isStyling && !isGenerating {
+                        Button {
+                            showingMagicPopup = true
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(PoshTheme.Colors.ink)
+                                    .frame(width: 56, height: 56)
+                                    .goldGlow()
+                                
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(PoshTheme.Colors.gold)
+                            }
+                        }
+                        .padding(.trailing, 24)
+                        .padding(.bottom, 24)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                }
                 .overlay {
                     if isStyling {
                         ProcessingOverlayView(message: dynamicLoadingMessage)
@@ -55,6 +73,13 @@ struct StylistView: View {
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
+                }
+                .sheet(isPresented: $showingMagicPopup) {
+                    StylistAIPopupView(onStyleMe: {
+                        performAISuggestion()
+                    })
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
                 }
                 
                 // Stylist Message Overlay
@@ -167,9 +192,7 @@ struct StylistView: View {
             }
         }
         .sheet(isPresented: $showSettings) {
-            StylistSettingsView(onStyleMe: {
-                performAISuggestion()
-            })
+            StylistSettingsView()
             .presentationDetents([.medium, .large])
         }
     }
