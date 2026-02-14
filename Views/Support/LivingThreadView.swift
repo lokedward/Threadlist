@@ -36,50 +36,62 @@ struct ThreadditLogoT: Shape {
             CGPoint(x: rect.minX + (x / 100) * w, y: rect.minY + (y / 100) * h)
         }
         
-        // --- 1. The Top Flourish (The "Thread" bar) ---
-        path.move(to: p(15, 35))
+        // --- 1. The Starting Curl & Top Flourish ---
+        // Start with a tighter curl on the left
+        path.move(to: p(25, 45))
         
-        // Elegant top sweep
+        // Initial curl up
         path.addCurve(
-            to: p(50, 20),
-            control1: p(25, 25),
-            control2: p(35, 18)
+            to: p(20, 30),
+            control1: p(15, 45),
+            control2: p(15, 35)
         )
         
-        // Continue to right loop
+        // Sweep across the top
+        path.addCurve(
+            to: p(55, 20),
+            control1: p(30, 20),
+            control2: p(45, 18)
+        )
+        
+        // The right "Needle Eye" loop
         path.addCurve(
             to: p(85, 30),
-            control1: p(65, 22),
+            control1: p(70, 22),
             control2: p(80, 20)
         )
         
-        // The right loop (where the needle eye would be)
         path.addCurve(
-            to: p(70, 45),
-            control1: p(95, 45),
-            control2: p(80, 50)
-        )
-        path.addCurve(
-            to: p(75, 25),
-            control1: p(65, 40),
-            control2: p(65, 30)
+            to: p(72, 42),
+            control1: p(92, 40),
+            control2: p(85, 48)
         )
         
-        // --- 2. The Main Downstroke ---
-        // We "jump" back to center top for the body
-        path.move(to: p(55, 25))
-        
+        // 2. The Integrated Vertical Downstroke (One continuous movement feeling)
         path.addCurve(
-            to: p(45, 85),
-            control1: p(75, 45),
-            control2: p(35, 65)
+            to: p(52, 30),
+            control1: p(65, 38),
+            control2: p(60, 32)
         )
         
-        // Bottom flourish loop
+        // The main body - smoother "S" curve
         path.addCurve(
-            to: p(20, 75),
-            control1: p(55, 100),
-            control2: p(25, 95)
+            to: p(48, 80),
+            control1: p(45, 35),
+            control2: p(65, 65)
+        )
+        
+        // 3. The Graceful Tail Loop
+        path.addCurve(
+            to: p(30, 75),
+            control1: p(40, 95),
+            control2: p(25, 90)
+        )
+        
+        path.addCurve(
+            to: p(35, 68),
+            control1: p(35, 65),
+            control2: p(40, 65)
         )
         
         return path
