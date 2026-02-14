@@ -1,0 +1,80 @@
+{
+  "identifier" : "3A9E66AA",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_type" : "settings"
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "7C6F1E3A",
+      "localizations" : [
+
+      ],
+      "name" : "ThreadList Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : " boutique_plus_id",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited wardrobe and daily magic style.",
+              "displayName" : "Boutique Plus",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.threadlist.boutique_plus",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Boutique Plus",
+          "subscriptionGroupID" : "7C6F1E3A",
+          "type" : "Recurring Subscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "6.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "atelier_elite_id",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "The full professional fashion suite.",
+              "displayName" : "Atelier Elite",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.threadlist.atelier_elite",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Atelier Elite",
+          "subscriptionGroupID" : "7C6F1E3A",
+          "type" : "Recurring Subscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

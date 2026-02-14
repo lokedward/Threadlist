@@ -135,22 +135,53 @@ struct PaywallView: View {
                 .frame(height: 200)
                 .foregroundColor(PoshTheme.Colors.ink)
             } else {
-                tierCard(
-                    tier: .boutique,
-                    price: priceFor(.boutique),
-                    tagline: "The Everyday Enthusiast",
-                    isPopular: true
-                )
-                
-                tierCard(
-                    tier: .atelier,
-                    price: priceFor(.atelier),
-                    tagline: "The Fashion Professional",
-                    isPopular: false
-                )
+                #if DEBUG
+                if subscriptionService.products.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("DEVELOPER PREVIEW")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(PoshTheme.Colors.gold)
+                        
+                        tierCard(
+                            tier: .boutique,
+                            price: "$3.99",
+                            tagline: "The Everyday Enthusiast",
+                            isPopular: true
+                        )
+                        
+                        tierCard(
+                            tier: .atelier,
+                            price: "$6.99",
+                            tagline: "The Fashion Professional",
+                            isPopular: false
+                        )
+                    }
+                } else {
+                    tierSelectionSectionContent
+                }
+                #else
+                tierSelectionSectionContent
+                #endif
             }
         }
         .padding(.horizontal, 20)
+    }
+    
+    @ViewBuilder
+    private var tierSelectionSectionContent: some View {
+        tierCard(
+            tier: .boutique,
+            price: priceFor(.boutique),
+            tagline: "The Everyday Enthusiast",
+            isPopular: true
+        )
+        
+        tierCard(
+            tier: .atelier,
+            price: priceFor(.atelier),
+            tagline: "The Fashion Professional",
+            isPopular: false
+        )
     }
     
     private func priceFor(_ tier: SubscriptionTier) -> String {
