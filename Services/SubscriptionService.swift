@@ -107,6 +107,7 @@ class SubscriptionService: ObservableObject {
             return monthlyGenerationCount < currentTier.styleMeLimit
         } else {
             return generationCount < currentTier.styleMeLimit
+        }
     }
     
     func recordGeneration() {
