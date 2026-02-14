@@ -540,29 +540,46 @@ struct DetailsSectionView: View {
     let canMagicFill: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text("Item Details").poshHeadline(size: 20)
-                Spacer()
-                
-                if canMagicFill {
-                    Button(action: onMagicFill) {
-                        HStack(spacing: 6) {
-                            Text("MAGIC FILL").font(.system(size: 9, weight: .bold)).tracking(1)
-                            Image(systemName: "sparkles")
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text("Item Details").poshHeadline(size: 20)
+                    Spacer()
+                    
+                    if showExpandButton {
+                        Button { withAnimation { isExpanded.toggle() } } label: {
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down").foregroundColor(PoshTheme.Colors.ink)
                         }
-                        .foregroundColor(PoshTheme.Colors.ink)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                        .background(PoshTheme.Colors.ink.opacity(0.05))
-                        .clipShape(Capsule())
                     }
                 }
                 
-                if showExpandButton {
-                    Button { withAnimation { isExpanded.toggle() } } label: {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down").foregroundColor(PoshTheme.Colors.ink)
+                if canMagicFill {
+                    Button(action: onMagicFill) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("AI MAGIC FILL")
+                                .font(.system(size: 11, weight: .bold))
+                                .tracking(1.5)
+                        }
+                        .foregroundColor(PoshTheme.Colors.ink)
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            ZStack {
+                                Color.white
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(PoshTheme.Colors.gold.opacity(0.4), lineWidth: 1)
+                                LinearGradient(
+                                    colors: [PoshTheme.Colors.gold.opacity(0.12), PoshTheme.Colors.gold.opacity(0.04)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            }
+                        )
+                        .cornerRadius(8)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             VStack(spacing: 16) {
