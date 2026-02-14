@@ -95,14 +95,7 @@ extension View {
     }
     
     func poshGoldGlow() -> some View {
-        modifier(PoshGoldGlowModifier())
-    }
-}
-
-struct PoshGoldGlowModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .shadow(color: PoshTheme.Colors.gold.opacity(0.5), radius: 10, x: 0, y: 0)
+        self.shadow(color: PoshTheme.Colors.gold.opacity(0.5), radius: 10, x: 0, y: 0)
             .shadow(color: PoshTheme.Colors.gold.opacity(0.3), radius: 20, x: 0, y: 0)
     }
 }
