@@ -100,124 +100,19 @@ enum StylingDensity: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-// MARK: - Settings View
-
-struct StylistSettingsView: View {
-    @AppStorage("stylistModelGender") private var genderRaw = "female"
-    @AppStorage("stylistBodyType") private var bodyTypeRaw = ModelBodyType.slim.rawValue
-    @AppStorage("stylistSkinTone") private var skinToneRaw = SkinTone.medium.rawValue
-    @AppStorage("stylistModelHeight") private var heightRaw = ModelHeight.average.rawValue
+enum StylistTab: String, CaseIterable, Identifiable {
+    case closet = "CLOSET"
+    case styling = "STYLING"
+    case profile = "PROFILE"
     
-    @AppStorage("stylistOccasion") private var occasionRaw = StylistOccasion.casual.rawValue
-    @AppStorage("stylistCustomOccasion") private var customOccasion = ""
-    
-    var onStyleMe: (() -> Void)? = nil
-    
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                modelProfileSection
-                appearanceSection
-                stylingOccasionSection
-                footerSection
-            }
-            .scrollContentBackground(.hidden)
-            .background(PoshTheme.Colors.canvas)
-            .navigationTitle("Stylist Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(PoshTheme.Colors.ink)
-                }
-            }
-        }
-    }
-    
-    private var stylingOccasionSection: some View {
-        Section("Target Occasion") {
-            Picker("Occasion", selection: $occasionRaw) {
-                ForEach(StylistOccasion.allCases) { occasion in
-                    Text(occasion.rawValue).tag(occasion.rawValue)
-                }
-            }
-            
-            if occasionRaw == StylistOccasion.custom.rawValue {
-                TextField("E.g. 90s Disco Party", text: $customOccasion)
-                    .font(.system(size: 15))
-            }
-        }
-        .listRowBackground(Color.white)
-    }
-    
-    private var modelProfileSection: some View {
-        Section("Model Profile") {
-            Picker("Gender", selection: $genderRaw) {
-                Text("Female").tag("female")
-                Text("Male").tag("male")
-            }
-            .pickerStyle(.segmented)
-            .listRowBackground(Color.clear)
-            .padding(.vertical, 4)
-            
-            Picker("Body Type", selection: $bodyTypeRaw) {
-                ForEach(ModelBodyType.allCases) { type in
-                    Text(type.rawValue).tag(type.rawValue)
-                }
-            }
-            
-            Picker("Height", selection: $heightRaw) {
-                ForEach(ModelHeight.allCases) { height in
-                    Text(height.rawValue).tag(height.rawValue)
-                }
-            }
-        }
-        .listRowBackground(Color.white)
-    }
-    
-    private var appearanceSection: some View {
-        Section("Appearance") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Skin Tone")
-                
-                HStack(spacing: 12) {
-                    ForEach(SkinTone.allCases) { tone in
-                        Circle()
-                            .fill(tone.color)
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Circle()
-                                    .stroke(PoshTheme.Colors.gold, lineWidth: tone.rawValue == skinToneRaw ? 3 : 0)
-                            )
-                            .onTapGesture {
-                                skinToneRaw = tone.rawValue
-                            }
-                    }
-                }
-                .padding(.bottom, 4)
-            }
-            .padding(.vertical, 4)
-        }
-        .listRowBackground(Color.white)
-    }
-    
-    private var footerSection: some View {
-        Section {
-            Text("These settings help the AI generate a model that best represents you or your desired look.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .listRowBackground(Color.clear)
-        }
-    }
+    var id: String { rawValue }
 }
 
-// MARK: - AI Stylist Popup View
+// MARK: - Settings View
 
-struct StylistAIPopupView: View {
+// MARK: - Integrated Tab Views
+
+struct StylingTabView: View {
     @AppStorage("stylistOccasion") private var occasionRaw = StylistOccasion.casual.rawValue
     @AppStorage("stylistCustomOccasion") private var customOccasion = ""
     @AppStorage("stylistStyleVibe") private var vibeRaw = StyleVibe.timeless.rawValue
@@ -225,77 +120,209 @@ struct StylistAIPopupView: View {
     @AppStorage("stylistMood") private var mood = ""
     
     var onStyleMe: () -> Void
-    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("AI STYLIST")
-                            .font(.system(size: 10, weight: .bold))
-                            .tracking(2)
-                            .foregroundColor(PoshTheme.Colors.gold)
-                        
-                        Text("Craft your perfect look with AI intelligence.")
-                            .poshBody(size: 14)
-                            .opacity(0.6)
-                    }
-                    .padding(.vertical, 8)
-                }
-                .listRowBackground(Color.clear)
-                
-                Section("OCCASION") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("TARGET OCCASION")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(PoshTheme.Colors.gold)
+                    
                     Picker("Occasion", selection: $occasionRaw) {
                         ForEach(StylistOccasion.allCases) { occ in
                             Text(occ.rawValue).tag(occ.rawValue)
                         }
                     }
+                    .pickerStyle(.menu)
+                    .accentColor(PoshTheme.Colors.ink)
                     
                     if occasionRaw == StylistOccasion.custom.rawValue {
                         TextField("E.g. Vintage Italian Summer", text: $customOccasion)
+                            .textFieldStyle(.roundedBorder)
                     }
                 }
                 
-                Section("STYLE PARAMETERS") {
-                    Picker("Vibe", selection: $vibeRaw) {
-                        ForEach(StyleVibe.allCases) { vibe in
-                            Text(vibe.rawValue).tag(vibe.rawValue)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("STYLE PARAMETERS")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(PoshTheme.Colors.gold)
+                    
+                    HStack {
+                        Text("Vibe")
+                            .font(.system(size: 14))
+                        Spacer()
+                        Picker("Vibe", selection: $vibeRaw) {
+                            ForEach(StyleVibe.allCases) { vibe in
+                                Text(vibe.rawValue).tag(vibe.rawValue)
+                            }
                         }
+                        .accentColor(PoshTheme.Colors.ink)
                     }
                     
-                    Picker("Density", selection: $densityRaw) {
-                        ForEach(StylingDensity.allCases) { density in
-                            Text(density.rawValue).tag(density.rawValue)
+                    HStack {
+                        Text("Density")
+                            .font(.system(size: 14))
+                        Spacer()
+                        Picker("Density", selection: $densityRaw) {
+                            ForEach(StylingDensity.allCases) { density in
+                                Text(density.rawValue).tag(density.rawValue)
+                            }
                         }
+                        .accentColor(PoshTheme.Colors.ink)
                     }
                 }
                 
-                Section("MOOD (OPTIONAL)") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("MOOD (OPTIONAL)")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(PoshTheme.Colors.gold)
+                    
                     TextField("E.g. monochromatic colors, oversized fit...", text: $mood, axis: .vertical)
-                        .lineLimit(2...4)
+                        .font(.system(size: 14))
+                        .lineLimit(2...3)
+                        .padding(10)
+                        .background(Color.white)
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(PoshTheme.Colors.border, lineWidth: 0.5)
+                        )
                 }
                 
-                Section {
-                    Button(action: {
-                        dismiss()
-                        onStyleMe()
-                    }) {
-                        HStack {
-                            Image(systemName: "sparkles")
-                            Text("STYLE ME NOW")
-                                .tracking(2)
-                        }
-                        .frame(maxWidth: .infinity)
+                Button(action: onStyleMe) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                        Text("STYLE ME NOW")
+                            .tracking(2)
                     }
-                    .poshButton()
+                    .frame(maxWidth: .infinity)
                 }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-                .padding(.top, 12)
+                .poshButton()
+                .padding(.top, 10)
             }
-            .scrollContentBackground(.hidden)
-            .background(PoshTheme.Colors.canvas)
+            .padding()
+        }
+    }
+}
+
+struct ProfileTabView: View {
+    @AppStorage("stylistModelGender") private var genderRaw = "female"
+    @AppStorage("stylistBodyType") private var bodyTypeRaw = ModelBodyType.slim.rawValue
+    @AppStorage("stylistSkinTone") private var skinToneRaw = SkinTone.medium.rawValue
+    @AppStorage("stylistModelHeight") private var heightRaw = ModelHeight.average.rawValue
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("GENDER")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(PoshTheme.Colors.gold)
+                    
+                    Picker("Gender", selection: $genderRaw) {
+                        Text("Female").tag("female")
+                        Text("Male").tag("male")
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("BODY TYPE")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                            .foregroundColor(PoshTheme.Colors.gold)
+                        
+                        Picker("Body Type", selection: $bodyTypeRaw) {
+                            ForEach(ModelBodyType.allCases) { type in
+                                Text(type.rawValue).tag(type.rawValue)
+                            }
+                        }
+                        .accentColor(PoshTheme.Colors.ink)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("HEIGHT")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                            .foregroundColor(PoshTheme.Colors.gold)
+                        
+                        Picker("Height", selection: $heightRaw) {
+                            ForEach(ModelHeight.allCases) { h in
+                                Text(h.rawValue).tag(h.rawValue)
+                            }
+                        }
+                        .accentColor(PoshTheme.Colors.ink)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("SKIN TONE")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(PoshTheme.Colors.gold)
+                    
+                    HStack(spacing: 12) {
+                        ForEach(SkinTone.allCases) { tone in
+                            Circle()
+                                .fill(tone.color)
+                                .frame(width: 34, height: 34)
+                                .overlay(
+                                    Circle()
+                                        .stroke(PoshTheme.Colors.gold, lineWidth: tone.rawValue == skinToneRaw ? 2 : 0)
+                                )
+                                .onTapGesture {
+                                    skinToneRaw = tone.rawValue
+                                }
+                        }
+                    }
+                }
+                
+                Text("These settings help the AI generate a model that best represents you.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 10)
+            }
+            .padding()
+        }
+    }
+}
+
+// Deprecated: Keeping for backward compatibility until all refs are gone
+struct StylistSettingsView: View {
+    var onStyleMe: (() -> Void)? = nil
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            ProfileTabView()
+                .navigationTitle("Profile Settings")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                            .foregroundColor(PoshTheme.Colors.ink)
+                    }
+                }
+        }
+    }
+}
+
+struct StylistAIPopupView: View {
+    var onStyleMe: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            StylingTabView(onStyleMe: {
+                dismiss()
+                onStyleMe()
+            })
             .navigationTitle("Magic Stylist")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

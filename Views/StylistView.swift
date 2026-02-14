@@ -10,9 +10,7 @@ struct StylistView: View {
     
     @State private var selectedItems: Set<UUID> = []
     @State private var showingSelection = true
-    @AppStorage("stylistModelGender") private var genderRaw = "female"
-    @State private var showSettings = false
-    @State private var showingMagicPopup = false
+    @State private var selectedTab: StylistTab = .closet
     
     // AI Suggestion State
     @AppStorage("stylistOccasion") private var occasionRaw = StylistOccasion.casual.rawValue
@@ -29,6 +27,8 @@ struct StylistView: View {
     @State private var showPaywall = false
     
     @State private var dynamicLoadingMessage = "STYLIST IS THINKING..."
+    
+    @AppStorage("stylistModelGender") private var genderRaw = "female"
     
     // Computed property to sync local state with AppStorage
     private var modelGender: Gender {
@@ -49,31 +49,6 @@ struct StylistView: View {
                     isSaved: $isSaved
                 )
                 .frame(maxHeight: .infinity)
-                .overlay(alignment: .bottomTrailing) {
-                    if !isStyling && !isGenerating {
-                        Button {
-                            showingMagicPopup = true
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.white)
-                                    .frame(width: 52, height: 52)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(PoshTheme.Colors.gold.opacity(0.3), lineWidth: 1)
-                                    )
-                                    .poshGoldGlow()
-                                
-                                Image(systemName: "wand.and.stars")
-                                    .font(.system(size: 20, weight: .light))
-                                    .foregroundColor(PoshTheme.Colors.gold)
-                            }
-                        }
-                        .padding(.trailing, 24)
-                        .padding(.bottom, 24)
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                }
                 .overlay {
                     if isStyling {
                         ProcessingOverlayView(message: dynamicLoadingMessage)
@@ -81,13 +56,6 @@ struct StylistView: View {
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
-                }
-                .sheet(isPresented: $showingMagicPopup) {
-                    StylistAIPopupView(onStyleMe: {
-                        performAISuggestion()
-                    })
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
                 }
                 
                 // Stylist Message Overlay
@@ -134,47 +102,72 @@ struct StylistView: View {
                     .zIndex(10)
                 }
                 
-                // Bottom Selection Drawer/Grid
+                // Consolidated Bottom Drawer
                 VStack(spacing: 0) {
                     Divider()
                         .background(PoshTheme.Colors.ink.opacity(0.1))
                     
-                    
-                    HStack {
-                        HStack(spacing: 6) {
-                            Text("YOUR CLOSET")
-                                .font(.system(size: 10, weight: .bold))
-                                .tracking(2)
-                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
-                            
-                            if !selectedItems.isEmpty {
-                                Text("(\(selectedItems.count))")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(PoshTheme.Colors.ink)
+                    // Tab Bar
+                    HStack(spacing: 0) {
+                        ForEach(StylistTab.allCases) { tab in
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedTab = tab
+                                    showingSelection = true
+                                }
+                            } label: {
+                                VStack(spacing: 8) {
+                                    Text(tab.rawValue)
+                                        .font(.system(size: 10, weight: selectedTab == tab ? .bold : .medium))
+                                        .tracking(1)
+                                        .foregroundColor(selectedTab == tab ? PoshTheme.Colors.gold : PoshTheme.Colors.ink.opacity(0.4))
+                                    
+                                    // Underline
+                                    Rectangle()
+                                        .fill(selectedTab == tab ? PoshTheme.Colors.gold : Color.clear)
+                                        .frame(height: 2)
+                                        .padding(.horizontal, 20)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
                         }
                         
-                        Spacer()
-                        
+                        // Collapse/Expand toggle
                         Button {
                             withAnimation(.spring()) {
                                 showingSelection.toggle()
                             }
                         } label: {
                             Image(systemName: showingSelection ? "chevron.down" : "chevron.up")
-                                .foregroundColor(PoshTheme.Colors.ink)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
+                                .padding(.horizontal, 16)
                         }
                     }
-                    .padding()
-                    .background(Color.white.opacity(0.5))
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
                     
                     if showingSelection {
-                        ItemSelectionGridView(
-                            items: items,
-                            selectedItems: $selectedItems
-                        )
-                        .transition(.move(edge: .bottom))
+                        Group {
+                            switch selectedTab {
+                            case .closet:
+                                ItemSelectionGridView(
+                                    items: items,
+                                    selectedItems: $selectedItems
+                                )
+                                .padding(.top, 4)
+                            case .styling:
+                                StylingTabView(onStyleMe: {
+                                    performAISuggestion()
+                                })
+                            case .profile:
+                                ProfileTabView()
+                            }
+                        }
                         .frame(maxHeight: 350)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
                 .background(.ultraThinMaterial)
@@ -189,19 +182,6 @@ struct StylistView: View {
             ToolbarItem(placement: .principal) {
                 Text("THE STUDIO").poshHeadline(size: 18)
             }
-            
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showSettings.toggle()
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundColor(PoshTheme.Colors.ink)
-                }
-            }
-        }
-        .sheet(isPresented: $showSettings) {
-            StylistSettingsView()
-            .presentationDetents([.medium, .large])
         }
     }
     
