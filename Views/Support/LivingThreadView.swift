@@ -39,37 +39,39 @@ struct LivingThreadView: View {
     }
     
     private func drawThread(context: GraphicsContext, size: CGSize, index: Int, time: Double, isGenerating: Bool, isVertical: Bool) {
-        let speed = isGenerating ? 2.5 : 1.0
-        let amplitude = isGenerating ? 40.0 : 20.0
-        let frequency = isVertical ? 0.008 : 0.005
+        let speed = isGenerating ? 3.0 : 1.2
+        let amplitude = isGenerating ? 45.0 : 25.0
+        let frequency = isVertical ? 0.007 : 0.006
         
         var path = Path()
         
         if isVertical {
-            let startX = size.width * (0.3 + Double(index) * 0.15)
+            let startX = size.width * (0.25 + Double(index) * 0.18)
             path.move(to: CGPoint(x: startX, y: 0))
             
             for y in stride(from: 0, to: size.height, by: 5) {
                 let relativePhase = Double(y) * frequency
-                let timePhase = time * speed + Double(index)
-                let x = startX + cos(relativePhase + timePhase) * (amplitude * 0.6)
+                // Uniform timePhase for "parallel" weaving
+                let timePhase = time * speed + (Double(index) * 0.2) 
+                let x = startX + cos(relativePhase + timePhase) * (amplitude * 0.7)
                 path.addLine(to: CGPoint(x: CGFloat(x), y: CGFloat(y)))
             }
         } else {
-            let startY = size.height * (0.2 + Double(index) * 0.15)
+            let startY = size.height * (0.15 + Double(index) * 0.18)
             path.move(to: CGPoint(x: 0, y: startY))
             
             for x in stride(from: 0, to: size.width, by: 5) {
                 let relativePhase = Double(x) * frequency
-                let timePhase = time * speed + Double(index)
-                let y = startY + sin(relativePhase + timePhase) * amplitude
+                // Uniform timePhase for "parallel" weaving
+                let timePhase = time * speed + (Double(index) * 0.2)
+                let y = startY + cos(relativePhase + timePhase) * amplitude
                 path.addLine(to: CGPoint(x: CGFloat(x), y: CGFloat(y)))
             }
         }
         
-        let color = index % 3 == 0 ? PoshTheme.Colors.gold : PoshTheme.Colors.ink
-        let opacity = isGenerating ? 0.3 : 0.1
-        let lineWidth = isGenerating ? 1.5 : 0.5
+        let color = index % 4 == 0 ? PoshTheme.Colors.gold : PoshTheme.Colors.ink
+        let opacity = isGenerating ? 0.4 : 0.15
+        let lineWidth = isGenerating ? 2.5 : 1.2
         
         context.stroke(
             path,
