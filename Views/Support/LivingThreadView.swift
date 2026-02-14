@@ -10,68 +10,68 @@ struct LivingThreadView: View {
         TimelineView(.animation) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
+                let cycleDuration: Double = isGenerating ? 3.0 : 5.0
+                let progress = (time.truncatingRemainder(dividingBy: cycleDuration)) / cycleDuration
                 
-                // Draw many ultra-thin threads to create a "knit" texture
-                let horizontalCount = 12
-                let verticalCount = 12
+                // We define 3 stages: 
+                // 0.0 - 0.6: Vertical lines trace down
+                // 0.6 - 0.9: Horizontal "shuttle" sweeps across
+                // 0.9 - 1.0: Fade out
                 
-                // 1. Draw Horizontal "Threads"
-                for i in 0..<horizontalCount {
-                    drawThread(
-                        context: context, 
-                        size: size, 
-                        index: i, 
-                        total: horizontalCount,
-                        time: time, 
-                        isGenerating: isGenerating, 
-                        isVertical: false
-                    )
+                let verticalCount = 8
+                let horizontalY = size.height * 0.5
+                
+                // 1. Draw Vertical "Warp" Threads
+                for i in 0..<verticalCount {
+                    let xPos = size.width * (0.2 + Double(i) * 0.08)
+                    let startDelay = Double(i) * 0.05
+                    let verticalProgress = min(1.0, max(0.0, (progress - startDelay) / 0.4))
+                    
+                    if verticalProgress > 0 {
+                        var path = Path()
+                        path.move(to: CGPoint(x: xPos, y: 0))
+                        path.addLine(to: CGPoint(x: xPos, y: size.height * verticalProgress))
+                        
+                        let opacity = progress > 0.9 ? (1.0 - (progress - 0.9) * 10) : 0.15
+                        context.stroke(
+                            path,
+                            with: .color(PoshTheme.Colors.ink.opacity(opacity)),
+                            style: StrokeStyle(lineWidth: 0.5)
+                        )
+                        
+                        // Add a small "needle" or "bead" at the leading edge
+                        if progress < 0.9 {
+                            let bead = Path(ellipseIn: CGRect(x: xPos - 1, y: (size.height * verticalProgress) - 1, width: 2, height: 2))
+                            context.fill(bead, with: .color(PoshTheme.Colors.gold.opacity(0.4)))
+                        }
+                    }
                 }
                 
-                // 2. Draw Vertical "Threads"
-                for i in 0..<verticalCount {
-                    drawThread(
-                        context: context, 
-                        size: size, 
-                        index: i, 
-                        total: verticalCount,
-                        time: time, 
-                        isGenerating: isGenerating, 
-                        isVertical: true
+                // 2. Draw Horizontal "Weft" Thread (The Shuttle)
+                let horizontalProgress = min(1.0, max(0.0, (progress - 0.5) / 0.4))
+                if horizontalProgress > 0 {
+                    var path = Path()
+                    path.move(to: CGPoint(x: 0, y: horizontalY))
+                    path.addLine(to: CGPoint(x: size.width * horizontalProgress, y: horizontalY))
+                    
+                    let opacity = progress > 0.9 ? (1.0 - (progress - 0.9) * 10) : 0.2
+                    context.stroke(
+                        path,
+                        with: .color(PoshTheme.Colors.gold.opacity(opacity)),
+                        style: StrokeStyle(lineWidth: 1.0)
                     )
+                    
+                    // Interaction glow at intersection points
+                    for i in 0..<verticalCount {
+                        let xPos = size.width * (0.2 + Double(i) * 0.08)
+                        if size.width * horizontalProgress > xPos {
+                            let dot = Path(ellipseIn: CGRect(x: xPos - 2, y: horizontalY - 2, width: 4, height: 4))
+                            context.fill(dot, with: .color(PoshTheme.Colors.gold.opacity(0.3)))
+                        }
+                    }
                 }
             }
         }
-    }
-    
-    private func drawThread(context: GraphicsContext, size: CGSize, index: Int, total: Int, time: Double, isGenerating: Bool, isVertical: Bool) {
-        let speed = isGenerating ? 0.8 : 0.3
-        let spread = isVertical ? size.width : size.height
-        let pos = (spread / CGFloat(total + 1)) * CGFloat(index + 1)
-        
-        // Subtle drift animation
-        let drift = sin(time * speed + Double(index) * 0.5) * (isGenerating ? 10.0 : 4.0)
-        
-        var path = Path()
-        if isVertical {
-            let x = pos + drift
-            path.move(to: CGPoint(x: x, y: 0))
-            path.addLine(to: CGPoint(x: x, y: size.height))
-        } else {
-            let y = pos + drift
-            path.move(to: CGPoint(x: 0, y: y))
-            path.addLine(to: CGPoint(x: size.width, y: y))
-        }
-        
-        let color = index % 5 == 0 ? PoshTheme.Colors.gold : PoshTheme.Colors.ink
-        let opacity = isGenerating ? 0.15 : 0.08
-        let lineWidth = 0.5 // Ultra-thin hair lines
-        
-        context.stroke(
-            path,
-            with: .color(color.opacity(opacity)),
-            style: StrokeStyle(lineWidth: lineWidth)
-        )
     }
 }
 
