@@ -35,7 +35,6 @@ struct StylingCanvasView: View {
                 VStack(spacing: 8) {
                     ZoomableImageView(image: generated)
                         .frame(maxHeight: 500) // Contain the zoomable area
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                         .poshCard()
                         .padding(.horizontal)
                         .transition(.scale.combined(with: .opacity))

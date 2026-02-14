@@ -109,11 +109,11 @@ struct ShadowPlaceholderCard: View {
         VStack(spacing: 12) {
             ZStack {
                 // Background
-                RoundedRectangle(cornerRadius: 16)
+                Rectangle()
                     .fill(PoshTheme.Colors.stone.opacity(0.4))
                 
                 // Dash Border
-                RoundedRectangle(cornerRadius: 16)
+                Rectangle()
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .foregroundColor(PoshTheme.Colors.ink.opacity(0.1))
                 

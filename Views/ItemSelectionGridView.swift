@@ -49,7 +49,7 @@ struct SelectableItemThumbnail: View {
                 ItemThumbnailView(item: item, showLabel: true)
                     .scaleEffect(isSelected ? 0.95 : 1.0)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        Rectangle()
                             .stroke(PoshTheme.Colors.ink, lineWidth: isSelected ? 3 : 0)
                     )
                 

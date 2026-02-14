@@ -503,7 +503,7 @@ struct ImageSectionView: View, Equatable {
                 Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fill)
                     .frame(width: UIScreen.main.bounds.width - 40, height: 300)
                     .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 16)).poshCard()
+                    .poshCard()
                 
                 if showChangeButton {
                     Button(action: onTrigger) {
@@ -520,7 +520,7 @@ struct ImageSectionView: View, Equatable {
                         Text("ADD PHOTOGRAPH").font(.system(size: 12, weight: .bold)).tracking(2).foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
                     }
                     .frame(maxWidth: .infinity).frame(height: 300)
-                    .background(Color.white).cornerRadius(16).poshCard()
+                    .background(Color.white).poshCard()
                 }.buttonStyle(.plain)
             }
         }

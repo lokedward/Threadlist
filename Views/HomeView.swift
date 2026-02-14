@@ -133,7 +133,6 @@ struct HomeView: View {
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
                                     .frame(width: 140, height: 200) // Portrait Aspect
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .poshCard()
                             }
                         }
