@@ -89,48 +89,49 @@ struct StylingCanvasView: View {
                 }
             } else if selectedItems.isEmpty {
                 // Empty state
-                VStack(spacing: 24) {
-                    LivingThreadView(isGenerating: false)
-                        .frame(height: 200)
+                VStack(spacing: 40) {
+                    Spacer()
+                    
+                    BrandLogoView(isAnimating: true)
+                        .frame(width: 120, height: 120)
                     
                     Text("SELECT PIECES TO START STYLING")
                         .font(.system(size: 10, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
-                        .padding(.top, -40)
+                        .tracking(3)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+                    
+                    Spacer()
                 }
             } else if isGenerating {
                 // Loading state
-                VStack(spacing: 32) {
-                    LivingThreadView(isGenerating: true)
-                        .frame(height: 180)
+                VStack(spacing: 48) {
+                    BrandLogoView(isAnimating: true, speed: 0.8)
+                        .frame(width: 140, height: 140)
                     
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         Text(dynamicLoadingMessage.uppercased())
                             .font(.system(size: 11, weight: .bold))
-                            .tracking(3)
+                            .tracking(4)
                             .foregroundColor(PoshTheme.Colors.ink)
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal)
                         
                         Text(usageMessage)
                             .font(.system(size: 10, weight: .light))
-                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.5))
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
                     }
                 }
-                .padding(.vertical, 40)
-                .padding(.horizontal, 32)
-                .background(Color.white)
+                .padding(.vertical, 60)
+                .padding(.horizontal, 40)
+                .background(Color.white.opacity(0.9))
                 .poshCard()
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             } else {
                 // Ready to generate - show mannequin + button
-                VStack {
+                VStack(spacing: 50) {
                     Spacer()
                     
-                    // Artistic placeholder
-                    LivingThreadView(isGenerating: false)
-                        .frame(height: 250)
+                    BrandLogoView(isAnimating: false)
+                        .frame(width: 160, height: 160)
                     
                     Spacer()
                     
