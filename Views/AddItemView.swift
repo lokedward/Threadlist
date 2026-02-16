@@ -185,12 +185,11 @@ struct AddItemView: View {
                     }
                 }
             }
-            .alert("SUCCESS", isPresented: $showingSaveAlert) {
-                Button("OK", role: .cancel) { 
-                    // Manual reset of scroll position is handled via the form view's internal logic or state
+            .sheet(isPresented: $showingSaveAlert) {
+                BulkCompletionModalView(itemsAdded: 1) {
+                    showingSaveAlert = false
                 }
-            } message: {
-                Text("Your item has been added to the wardrobe.")
+                .presentationDetents([.medium])
             }
         }
     }

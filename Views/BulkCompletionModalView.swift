@@ -26,7 +26,7 @@ struct BulkCompletionModalView: View {
                     }
                     .padding(.top, 20)
                     
-                    Text("UPLOAD COMPLETE")
+                    Text(itemsAdded == 1 ? "ITEM ADDED" : "UPLOAD COMPLETE")
                         .font(.system(size: 18, weight: .bold))
                         .tracking(3)
                         .foregroundColor(PoshTheme.Colors.ink)
@@ -46,7 +46,7 @@ struct BulkCompletionModalView: View {
                             .padding(.top, 12)
                     }
                     
-                    Text("added to your wardrobe")
+                    Text(itemsAdded == 1 ? "added to your wardrobe" : "added to your wardrobe")
                         .font(.system(size: 15, weight: .light))
                         .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
                 }
