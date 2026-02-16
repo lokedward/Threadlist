@@ -22,9 +22,9 @@ class ClosetDataService {
         size: String? = nil,
         tags: [String] = [],
         context: ModelContext
-    ) throws {
-        // 1. Save image to disk
-        guard let imageID = imageStorage.saveImage(image) else {
+    ) async throws {
+        // 1. Save image to disk (async to avoid blocking main thread)
+        guard let imageID = await imageStorage.saveImage(image) else {
             throw DataError.imageSaveFailed
         }
         
@@ -38,9 +38,8 @@ class ClosetDataService {
             tags: tags
         )
         
-        // 3. Insert and save
+        // 3. Insert (save happens in batch or immediately based on caller)
         context.insert(item)
-        try context.save()
     }
     
     /// Updates an existing item and its image if provided

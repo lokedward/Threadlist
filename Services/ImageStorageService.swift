@@ -26,7 +26,27 @@ class ImageStorageService {
         }
     }
     
-    /// Save an image with compression and return the UUID
+    /// Save an image with compression and return the UUID (Async version for performance)
+    func saveImage(_ image: UIImage, withID id: UUID = UUID()) async -> UUID? {
+        // Cache immediately on calling thread
+        cache.setObject(image, forKey: id.uuidString as NSString)
+        
+        return await withCheckedContinuation { continuation in
+            ioQueue.async {
+                // Perform compression on background queue
+                guard let data = image.jpegData(compressionQuality: 0.8) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let fileURL = self.imageDirectory.appendingPathComponent("\(id.uuidString).jpg")
+                try? data.write(to: fileURL)
+                continuation.resume(returning: id)
+            }
+        }
+    }
+    
+    /// Save an image with compression and return the UUID (Legacy sync version)
     func saveImage(_ image: UIImage, withID id: UUID = UUID()) -> UUID? {
         // Cache immediately
         cache.setObject(image, forKey: id.uuidString as NSString)

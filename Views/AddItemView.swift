@@ -63,6 +63,7 @@ struct AddItemView: View {
     @State private var bulkItemsSaved: Int = 0
     @State private var bulkItemsToDisplay: Int = 0
     @State private var showBulkCompletionModal = false
+    @State private var bulkSaveProgress: Double = 0.0
     
     var canSave: Bool {
         let hasImage = additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty
@@ -143,6 +144,7 @@ struct AddItemView: View {
                 onBulkProcessed: { imgs in 
                     bulkImageQueue = imgs
                     totalBulkItems = imgs.count
+                    bulkSaveProgress = 0.0
                     isMetadataExpanded = true
                     performMagicFill()
                 }
@@ -150,6 +152,35 @@ struct AddItemView: View {
             .overlay {
                 if isProcessingImage {
                     ProcessingOverlayView(message: dynamicLoadingMessage)
+                } else if isSaving && additionMode == .multiple && totalBulkItems > 1 {
+                    // Bulk save progress overlay
+                    ZStack {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea()
+                        
+                        VStack(spacing: 20) {
+                            ProgressView(value: bulkSaveProgress)
+                                .tint(PoshTheme.Colors.gold)
+                                .scaleEffect(x: 1, y: 2, anchor: .center)
+                                .frame(width: 200)
+                            
+                            VStack(spacing: 4) {
+                                Text("SAVING ITEMS")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .tracking(2)
+                                    .foregroundColor(.white)
+                                
+                                Text("\(bulkItemsSaved) OF \(totalBulkItems)")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                        }
+                        .padding(40)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(PoshTheme.Colors.ink.opacity(0.95))
+                        )
+                    }
                 }
             }
             .sheet(isPresented: $showPaywall) {
@@ -288,6 +319,7 @@ struct AddItemView: View {
         }
     }
 
+
     private func saveItem() {
         let currentImage = additionMode == .single ? selectedImage : bulkImageQueue.first
         guard let image = currentImage, let category = selectedCategory else { return }
@@ -311,6 +343,17 @@ struct AddItemView: View {
                     brand: brand.isEmpty ? nil : brand, size: size.isEmpty ? nil : size,
                     tags: tags, context: modelContext
                 )
+                
+                // Batch save context for performance (every 5 items or at end)
+                if additionMode == .multiple {
+                    let itemsProcessed = totalBulkItems - bulkImageQueue.count + 1
+                    if itemsProcessed % 5 == 0 || bulkImageQueue.count == 1 {
+                        try modelContext.save()
+                    }
+                } else {
+                    try modelContext.save()
+                }
+                
                 await MainActor.run {
                     isSaving = false
                     
@@ -320,6 +363,9 @@ struct AddItemView: View {
                     } else {
                         // Increment bulk items saved counter
                         bulkItemsSaved += 1
+                        
+                        // Update progress
+                        bulkSaveProgress = Double(bulkItemsSaved) / Double(totalBulkItems)
                         
                         bulkImageQueue.removeFirst()
                         
@@ -332,7 +378,7 @@ struct AddItemView: View {
                             brand = ""
                             size = ""
                             tagsText = ""
-                            // Keep category as is for bulk speed? Or reset?
+                            // Keep category as is for bulk speed
                             withAnimation { isMetadataExpanded = true }
                             if bulkImageQueue.isEmpty {
                                 // Bulk upload complete - show summary modal
@@ -342,12 +388,10 @@ struct AddItemView: View {
                                 }
                                 // Reset counter for next session
                                 bulkItemsSaved = 0
-                                // Instead of resetting to single, we stay in the mode the user chose
-                                // but we clear the form for the next potential entry
                                 resetForm()
                             } else {
-                                // Auto-fill the next item in the bulk queue
-                                performMagicFill()
+                                // Skip Magic Fill for bulk items - just clear form for speed
+                                // User can manually fill or skip
                             }
                         }
                     }
