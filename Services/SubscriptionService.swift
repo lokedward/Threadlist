@@ -117,31 +117,40 @@ class SubscriptionService: ObservableObject {
     // MARK: - StoreKit 2 Implementation
     
     func fetchProducts() async {
-        isLoaded = false
-        loadError = nil
+        // Clear all states
+        await MainActor.run {
+            isLoaded = false
+            loadError = nil
+        }
+        
         do {
             let ids = SubscriptionTier.allCases.compactMap { $0.productId }
-            self.products = try await Product.products(for: ids)
-            print("📦 StoreKit: Loaded \(products.count) products")
+            let fetchedProducts = try await Product.products(for: ids)
             
-            if products.isEmpty {
-                print("⚠️ StoreKit: No products found. Falling back to simulation mode.")
-                simulateProducts()
+            await MainActor.run {
+                self.products = fetchedProducts
+                print("📦 StoreKit: Loaded \(self.products.count) products")
+                
+                if self.products.isEmpty {
+                    print("⚠️ StoreKit: No products found. Falling back to simulation mode.")
+                    self.simulateProducts()
+                }
+                self.isLoaded = true
             }
-            isLoaded = true
         } catch {
-            print("❌ StoreKit: Failed to fetch products: \(error)")
-            print("⚠️ StoreKit: Error occurred. Falling back to simulation mode.")
-            simulateProducts()
-            isLoaded = true
+            await MainActor.run {
+                print("❌ StoreKit: Failed to fetch products: \(error)")
+                print("⚠️ StoreKit: Error occurred. Falling back to simulation mode.")
+                self.simulateProducts()
+                self.isLoaded = true
+            }
         }
     }
     
     /// Simulates products for UI testing when StoreKit is unavailable
     private func simulateProducts() {
-        // Since we can't easily construct Product instances directly in code (they are fetched from App Store or StoreKit config),
-        // we'll leave the products array empty, but update the UI to show 'Simulated' state in the Paywall if products are missing.
-        loadError = nil // Clear error to allow 'Simulated' UI to show
+        self.loadError = nil // Must be nil to trigger 'Preview Mode' UI
+        print("✅ StoreKit: Simulation mode active.")
     }
     
     func purchase(_ tier: SubscriptionTier) async throws {
