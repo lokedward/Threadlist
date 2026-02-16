@@ -281,6 +281,12 @@ class StylistService {
         Setting: \(environment.promptDescription), blurred depth of field.
         Lighting: Cinematic lighting fitting the environment, 8k, highly detailed, photorealistic.
         Safety: Strictly fashion-related. No nudity, no violence, no inappropriate content.
+        
+        CRITICAL INSTRUCTION:
+        If the Outfit description above does NOT explicitly mention a Top (shirt, blouse, etc.), the model MUST wear a highly detailed plain white t-shirt.
+        If the Outfit description above does NOT explicitly mention a Bottom (pants, skirt, shorts, etc.), the model MUST wear highly detailed plain black shorts.
+        Do not describe these default items as "missing". Just render them.
+        
         Output: Raw image bytes.
         </IMAGE_GENERATION_REQUEST>
         """
