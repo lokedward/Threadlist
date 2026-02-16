@@ -134,6 +134,24 @@ enum ModelEnvironment: String, CaseIterable, Identifiable {
     }
 }
 
+enum ModelFraming: String, CaseIterable, Identifiable {
+    case neckDown = "Neck Down (Default)"
+    case fullBody = "Full Body"
+    case waistUp = "Waist Up"
+    case closeUp = "Close Up Detail"
+    
+    var id: String { rawValue }
+    
+    var promptDescription: String {
+        switch self {
+        case .neckDown: return "Editorial neck down fashion photo. No faces."
+        case .fullBody: return "Full body fashion photo showing head to toe. No faces."
+        case .waistUp: return "Waist-up fashion portrait. No faces."
+        case .closeUp: return "Close-up detail shot of the outfit textures. No faces."
+        }
+    }
+}
+
 // MARK: - Enums (Continued)
 
 enum ModelHeight: String, CaseIterable, Identifiable {
@@ -367,6 +385,7 @@ struct ProfileTabView: View {
     
     // Vibe
     @AppStorage("stylistEnvironment") private var environmentRaw = ModelEnvironment.studio.rawValue
+    @AppStorage("stylistFraming") private var framingRaw = ModelFraming.neckDown.rawValue
     
     var body: some View {
         ScrollView {
@@ -443,7 +462,7 @@ struct ProfileTabView: View {
                     StylistPicker(title: "STYLE", selection: $hairStyleRaw, options: ModelHairStyle.allCases.map(\.rawValue)) { $0 }
                 }
                 
-                // SECTION 3: VIBE
+                // SECTION 3: VIBE & CAMERA
                 VStack(alignment: .leading, spacing: 20) {
                     SectionHeader(title: "ATMOSPHERE")
                     
@@ -479,6 +498,11 @@ struct ProfileTabView: View {
                             }
                         }
                     }
+                    
+                    // CAMERA FRAMING
+                    SectionHeader(title: "FRAMING")
+                    
+                    StylistPicker(title: "SHOT TYPE", selection: $framingRaw, options: ModelFraming.allCases.map(\.rawValue)) { $0 }
                 }
                 
                 Text("These settings help the AI generate a model that best represents you.")

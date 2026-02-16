@@ -254,6 +254,7 @@ class StylistService {
     @AppStorage("stylistHairColor") private var hairColorRaw = ModelHairColor.brown.rawValue
     @AppStorage("stylistHairStyle") private var hairStyleRaw = ModelHairStyle.wavy.rawValue
     @AppStorage("stylistEnvironment") private var environmentRaw = ModelEnvironment.studio.rawValue
+    @AppStorage("stylistFraming") private var framingRaw = ModelFraming.neckDown.rawValue
     
     private func generateImage(description: String, gender: Gender) async throws -> UIImage {
         let model = "gemini-2.5-flash-image"
@@ -267,12 +268,13 @@ class StylistService {
         let hairColor = ModelHairColor(rawValue: hairColorRaw) ?? .brown
         let hairStyle = ModelHairStyle(rawValue: hairStyleRaw) ?? .wavy
         let environment = ModelEnvironment(rawValue: environmentRaw) ?? .studio
+        let framing = ModelFraming(rawValue: framingRaw) ?? .neckDown
         
         let genderStr = gender == .male ? "male" : "female"
         
         let fullPrompt = """
         <IMAGE_GENERATION_REQUEST>
-        Editorial neck down fashion photo. No faces.
+        \(framing.promptDescription)
         Model: \(ageGroup.promptDescription) \(height.promptDescription) \(genderStr) model, \(skinTone.promptDescription), \(bodyType.promptDescription).
         Hair: \(hairColor.rawValue) \(hairStyle.rawValue) hair.
         Outfit: \(description).

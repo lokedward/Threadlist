@@ -51,7 +51,8 @@ class OutfitCacheService {
             defaults.string(forKey: "stylistAgeGroup") ?? "",
             defaults.string(forKey: "stylistHairColor") ?? "",
             defaults.string(forKey: "stylistHairStyle") ?? "",
-            defaults.string(forKey: "stylistEnvironment") ?? ""
+            defaults.string(forKey: "stylistEnvironment") ?? "",
+            defaults.string(forKey: "stylistFraming") ?? ""
         ].joined(separator: "|")
         
         let rawKey = "\(baseKey)_\(settings)"
