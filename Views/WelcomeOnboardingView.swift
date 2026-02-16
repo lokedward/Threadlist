@@ -20,13 +20,8 @@ struct WelcomeOnboardingView: View {
                 // Hero Header with Gold Accents
                 VStack(spacing: 6) {
                     HStack(spacing: 0) {
-                        Text("Your ")
-                            .poshHeadline(size: 28)
-                        Text("Digital")
-                            .poshHeadline(size: 28)
-                            .foregroundColor(PoshTheme.Colors.gold)
-                        Text(" Wardrobe")
-                            .poshHeadline(size: 28)
+                        Text("Your Digital Wardrobe")
+                            .poshHeadline(size: 32)
                     }
                     .multilineTextAlignment(.center)
                     
