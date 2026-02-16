@@ -14,6 +14,7 @@ struct SettingsView: View {
 
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedStudioOnboarding") private var hasCompletedStudioOnboarding = false
     
     @State private var showingClearConfirmation = false
     @State private var showingExportSheet = false
@@ -368,6 +369,7 @@ struct SettingsView: View {
         
         // Reset onboarding state
         hasCompletedOnboarding = false
+        hasCompletedStudioOnboarding = false
     }
 }
 
