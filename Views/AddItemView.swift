@@ -44,6 +44,9 @@ struct AddItemView: View {
     // Prefilled items (from Email Import)
     var prefilledItems: [EmailProductItem]? = nil
     
+    // Preselected Category (from placeholder tap in HomeView)
+    var preselectedCategoryName: String? = nil
+    
     // UI state
     @State private var isSaving = false
     @State private var isProcessingImage = false
@@ -161,8 +164,14 @@ struct AddItemView: View {
                     emailItemsQueue = prefilled
                     totalBulkItems = prefilled.count
                     loadNextEmailItem()
-                } else if selectedCategory == nil { 
-                    selectedCategory = categories.first 
+                } else {
+                    // If a category name is preselected, find and select it
+                    if let preselName = preselectedCategoryName,
+                       let matchedCategory = categories.first(where: { $0.name == preselName }) {
+                        selectedCategory = matchedCategory
+                    } else if selectedCategory == nil {
+                        selectedCategory = categories.first
+                    }
                 }
             }
             .alert("SUCCESS", isPresented: $showingSaveAlert) {

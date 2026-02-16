@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var searchText = ""
     @State private var selectedTab = 0
+    @State private var preselectedCategory: String? = nil
     
     init() {
         // 2.2. Style the Tab Bar
@@ -45,7 +46,7 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             // Tab 1: Wardrobe
             NavigationStack {
-                HomeView(searchText: $searchText, selectedTab: $selectedTab)
+                HomeView(searchText: $searchText, selectedTab: $selectedTab, preselectedCategory: $preselectedCategory)
                     .navigationTitle("Wardrobe")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar(.hidden, for: .navigationBar)
@@ -57,7 +58,7 @@ struct ContentView: View {
             .tag(0)
             
             // Tab 2: Curate (Action)
-            AddItemView()
+            AddItemView(preselectedCategoryName: preselectedCategory)
                 .tabItem {
                     Image(systemName: "plus")
                     Text("Curate")
@@ -88,6 +89,12 @@ struct ContentView: View {
         }
         .tint(PoshTheme.Colors.gold) // Selected color
         .preferredColorScheme(.light) // Enforce Light Mode globally
+        .onChange(of: selectedTab) { oldValue, newValue in
+            // Clear preselected category when leaving the Curate tab
+            if oldValue == 1 && newValue != 1 {
+                preselectedCategory = nil
+            }
+        }
     }
 }
 

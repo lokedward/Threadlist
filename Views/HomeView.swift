@@ -9,6 +9,7 @@ struct HomeView: View {
     @Query(sort: \Category.displayOrder) private var categories: [Category]
     @Binding var searchText: String
     @Binding var selectedTab: Int
+    @Binding var preselectedCategory: String?
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
@@ -72,7 +73,11 @@ struct HomeView: View {
                             }
 
                             ForEach(Array(sortedCategories.enumerated()), id: \.element.id) { index, category in
-                                CategoryShelfView(category: category, selectedTab: $selectedTab)
+                                CategoryShelfView(
+                                    category: category,
+                                    selectedTab: $selectedTab,
+                                    preselectedCategory: $preselectedCategory
+                                )
                                 
                                 if index < sortedCategories.count - 1 {
                                     Rectangle()
@@ -148,7 +153,7 @@ struct HomeView: View {
 
 #Preview {
     NavigationStack {
-        HomeView(searchText: .constant(""), selectedTab: .constant(0))
+        HomeView(searchText: .constant(""), selectedTab: .constant(0), preselectedCategory: .constant(nil))
     }
     .modelContainer(for: [ClothingItem.self, Category.self], inMemory: true)
 }

@@ -7,11 +7,13 @@ import SwiftData
 struct CategoryShelfView: View {
     let category: Category
     @Binding var selectedTab: Int
+    @Binding var preselectedCategory: String?
     @State private var isExpanded: Bool
     
-    init(category: Category, selectedTab: Binding<Int>) {
+    init(category: Category, selectedTab: Binding<Int>, preselectedCategory: Binding<String?>) {
         self.category = category
         self._selectedTab = selectedTab
+        self._preselectedCategory = preselectedCategory
         // Default to expanded for roomier feel
         self._isExpanded = State(initialValue: true)
     }
@@ -63,7 +65,10 @@ struct CategoryShelfView: View {
                                 .frame(width: 140)
                                 .onTapGesture {
                                     withAnimation {
-                                        selectedTab = 1 // Switch to Curate tab
+                                        // Set the category name to be preselected
+                                        preselectedCategory = category.name
+                                        // Switch to Curate tab
+                                        selectedTab = 1
                                     }
                                 }
                         } else {
@@ -142,7 +147,11 @@ struct ShadowPlaceholderCard: View {
     container.mainContext.insert(category)
     
     return NavigationStack {
-        CategoryShelfView(category: category, selectedTab: .constant(0))
+        CategoryShelfView(
+            category: category,
+            selectedTab: .constant(0),
+            preselectedCategory: .constant(nil)
+        )
     }
     .modelContainer(container)
 }
