@@ -5,8 +5,12 @@ struct WelcomeOnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Binding var hasCompletedOnboarding: Bool
     
-    @State private var selectedTemplate: String? = nil
-    @State private var pendingCategories: [String] = []
+    @State private var selectedTemplates: Set<String> = []
+    @State private var allTemplates: [(name: String, categories: [String])] = [
+        ("Classic Essentials", ["Tops", "Bottoms", "Outerwear", "Shoes"]),
+        ("Athleisure", ["Activewear", "Sneakers", "Performance", "Athleisure"]),
+        ("Dressy & Refined", ["Formal", "Blazers", "Dress Shoes", "Accessories"])
+    ]
     
     var body: some View {
         ZStack {
@@ -42,23 +46,60 @@ struct WelcomeOnboardingView: View {
                     }
                     .padding(.horizontal)
                     
-                    if let selected = selectedTemplate {
-                        // Feedback / Success State
-                        VStack(spacing: 32) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 40, weight: .thin))
-                                .foregroundColor(PoshTheme.Colors.ink)
+                    // Starter Paths
+                    VStack(alignment: .leading, spacing: 24) {
+                        Text("SELECT YOUR WARDROBE STYLE")
+                            .font(.system(size: 12, weight: .bold))
+                            .tracking(2)
+                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
+                            .padding(.horizontal)
+                        
+                        VStack(spacing: 20) {
+                            TemplateRow(
+                                title: "Classic Essentials",
+                                subtitle: "Perfect for everyday basics & versatile pieces",
+                                categories: ["Tops", "Bottoms", "Outerwear", "Shoes"],
+                                icon: "square.grid.2x2",
+                                isSelected: selectedTemplates.contains("Classic Essentials"),
+                                onToggle: { toggleTemplate("Classic Essentials") }
+                            )
                             
-                            VStack(spacing: 12) {
-                                Text("\(selected.uppercased()) READY")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .tracking(2)
-                                
-                                Text("We've drafted specialized shelves for your \(selected.lowercased()) categories.")
-                                    .poshBody(size: 14)
-                                    .opacity(0.6)
-                                    .multilineTextAlignment(.center)
-                            }
+                            TemplateRow(
+                                title: "Athleisure",
+                                subtitle: "For active lifestyles & comfortable style",
+                                categories: ["Activewear", "Sneakers", "Performance", "Athleisure"],
+                                icon: "figure.run",
+                                isSelected: selectedTemplates.contains("Athleisure"),
+                                onToggle: { toggleTemplate("Athleisure") }
+                            )
+                            
+                            TemplateRow(
+                                title: "Dressy & Refined",
+                                subtitle: "Elevated pieces for special occasions",
+                                categories: ["Formal", "Blazers", "Dress Shoes", "Accessories"],
+                                icon: "star.fill",
+                                isSelected: selectedTemplates.contains("Dressy & Refined"),
+                                onToggle: { toggleTemplate("Dressy & Refined") }
+                            )
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Footer Hint
+                    if selectedTemplates.isEmpty {
+                        Text("Choose a style to organize your wardrobe with custom categories.")
+                            .poshBody(size: 13)
+                            .opacity(0.5)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                            .padding(.bottom, 40)
+                    } else {
+                        // CTA Button
+                        VStack(spacing: 12) {
+                            Text("\(selectedTemplates.count) style\(selectedTemplates.count > 1 ? "s" : "") selected")
+                                .font(.system(size: 11, weight: .medium))
+                                .tracking(1)
+                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
                             
                             Button {
                                 finalizeOnboarding()
@@ -68,77 +109,49 @@ struct WelcomeOnboardingView: View {
                             }
                             .poshButton()
                         }
-                        .padding(40)
-                        .background(Color.white)
-                        .cornerRadius(24)
-                        .poshCard()
                         .padding(.horizontal)
-                        .transition(.scale.combined(with: .opacity))
-                    } else {
-                        // Starter Paths
-                        VStack(alignment: .leading, spacing: 24) {
-                            Text("SELECT YOUR WARDROBE STYLE")
-                                .font(.system(size: 12, weight: .bold))
-                                .tracking(2)
-                                .foregroundColor(PoshTheme.Colors.ink.opacity(0.8))
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 20) {
-                                TemplateRow(
-                                    title: "Classic Essentials",
-                                    subtitle: "Perfect for everyday basics & versatile pieces",
-                                    categories: ["Tops", "Bottoms", "Outerwear", "Shoes"],
-                                    icon: "square.grid.2x2",
-                                    onSelect: { name, cats in
-                                        selectedTemplate = name
-                                        pendingCategories = cats
-                                    }
-                                )
-                                
-                                TemplateRow(
-                                    title: "Athleisure",
-                                    subtitle: "For active lifestyles & comfortable style",
-                                    categories: ["Activewear", "Sneakers", "Performance", "Athleisure"],
-                                    icon: "figure.run",
-                                    onSelect: { name, cats in
-                                        selectedTemplate = name
-                                        pendingCategories = cats
-                                    }
-                                )
-                                
-                                TemplateRow(
-                                    title: "Dressy & Refined",
-                                    subtitle: "Elevated pieces for special occasions",
-                                    categories: ["Formal", "Blazers", "Dress Shoes", "Accessories"],
-                                    icon: "star.fill",
-                                    onSelect: { name, cats in
-                                        selectedTemplate = name
-                                        pendingCategories = cats
-                                    }
-                                )
-                            }
-                            .padding(.horizontal)
-                        }
-                        .transition(.opacity)
-                    }
-                    
-                    // Footer Hint
-                    if selectedTemplate == nil {
-                        Text("Choose a style to organize your wardrobe with custom categories.")
-                            .poshBody(size: 13)
-                            .opacity(0.5)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                            .padding(.bottom, 40)
+                        .padding(.bottom, 40)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                .animation(.spring(), value: selectedTemplate)
+                .animation(.spring(), value: selectedTemplates)
             }
         }
     }
     
+    private func toggleTemplate(_ name: String) {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        if selectedTemplates.contains(name) {
+            selectedTemplates.remove(name)
+        } else {
+            selectedTemplates.insert(name)
+        }
+    }
+    
+    
     private func finalizeOnboarding() {
-        for (index, name) in pendingCategories.enumerated() {
+        // Collect all categories from selected templates
+        var allCategories: [String] = []
+        for templateName in selectedTemplates {
+            if let template = allTemplates.first(where: { $0.name == templateName }) {
+                allCategories.append(contentsOf: template.categories)
+            }
+        }
+        
+        // Remove duplicates while preserving order
+        var uniqueCategories: [String] = []
+        var seen: Set<String> = []
+        for category in allCategories {
+            if !seen.contains(category) {
+                uniqueCategories.append(category)
+                seen.insert(category)
+            }
+        }
+        
+        // Create categories in the model
+        for (index, name) in uniqueCategories.enumerated() {
             // Check if category already exists to avoid duplicates
             let descriptor = FetchDescriptor<Category>(predicate: #Predicate<Category> { $0.name == name })
             if (try? modelContext.fetch(descriptor))?.isEmpty ?? true {
@@ -165,15 +178,12 @@ struct TemplateRow: View {
     let subtitle: String
     let categories: [String]
     let icon: String
-    let onSelect: (String, [String]) -> Void
+    let isSelected: Bool
+    let onToggle: () -> Void
     
     var body: some View {
         Button {
-            // Haptic feedack on tap
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
-            
-            onSelect(title, categories)
+            onToggle()
         } label: {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 16) {
@@ -211,9 +221,18 @@ struct TemplateRow: View {
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.3))
-                        .font(.system(size: 16, weight: .semibold))
+                    // Toggle Circle
+                    ZStack {
+                        Circle()
+                            .strokeBorder(isSelected ? PoshTheme.Colors.ink : PoshTheme.Colors.ink.opacity(0.2), lineWidth: 2)
+                            .frame(width: 28, height: 28)
+                        
+                        if isSelected {
+                            Circle()
+                                .fill(PoshTheme.Colors.ink)
+                                .frame(width: 16, height: 16)
+                        }
+                    }
                 }
                 
                 // Category tags
@@ -231,7 +250,12 @@ struct TemplateRow: View {
             }
             .padding(20)
             .background(Color.white)
-            .poshCard()
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(isSelected ? PoshTheme.Colors.ink.opacity(0.15) : Color.clear, lineWidth: 2)
+            )
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
