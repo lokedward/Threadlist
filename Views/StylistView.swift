@@ -45,10 +45,10 @@ struct StylistView: View {
     var body: some View {
         mainContent
             .sheet(isPresented: $showingOnboarding) {
-                StudioOnboardingView(showPaywall: $showPaywall) {
+                StudioOnboardingView(onComplete: {
                     hasCompletedOnboarding = true
                     selectedTab = .closet
-                }
+                }, showPaywall: $showPaywall)
             }
             .onAppear {
                 // Show onboarding for first-time users who just unlocked the Studio
