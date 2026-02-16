@@ -53,6 +53,89 @@ enum SkinTone: String, CaseIterable, Identifiable {
     }
 }
 
+enum ModelHairStyle: String, CaseIterable, Identifiable {
+    case straight = "Straight"
+    case wavy = "Wavy"
+    case curly = "Curly"
+    case short = "Short/Pixie"
+    case bob = "Bob Cut"
+    case updo = "Bun/Updo"
+    case bald = "Bald/Shaved"
+    
+    var id: String { rawValue }
+}
+
+enum ModelHairColor: String, CaseIterable, Identifiable {
+    case brown = "Brunette"
+    case black = "Black"
+    case blonde = "Blonde"
+    case auburn = "Red/Auburn"
+    case grey = "Grey"
+    case silver = "Silver"
+    case white = "White"
+    
+    var id: String { rawValue }
+    
+    var color: Color {
+        switch self {
+        case .brown: return Color(red: 0.4, green: 0.25, blue: 0.15)
+        case .black: return Color(red: 0.1, green: 0.1, blue: 0.1)
+        case .blonde: return Color(red: 0.95, green: 0.85, blue: 0.5)
+        case .auburn: return Color(red: 0.6, green: 0.2, blue: 0.1)
+        case .grey: return Color(white: 0.5)
+        case .silver: return Color(white: 0.8)
+        case .white: return Color(white: 0.95)
+        }
+    }
+}
+
+enum ModelAgeGroup: String, CaseIterable, Identifiable {
+    case genZ = "Gen Z (20s)"
+    case millennial = "Millennial (30s)"
+    case genX = "Gen X (40s-50s)"
+    case silver = "Silver (60+)"
+    
+    var id: String { rawValue }
+    
+    var promptDescription: String {
+        switch self {
+        case .genZ: return "young adult 20s"
+        case .millennial: return "adult 30s"
+        case .genX: return "middle-aged 40s-50s"
+        case .silver: return "mature 60s+"
+        }
+    }
+}
+
+enum ModelEnvironment: String, CaseIterable, Identifiable {
+    case studio = "Studio Classic"
+    case urban = "Urban Street"
+    case nature = "Soft Nature"
+    case luxury = "Luxury Interior"
+    
+    var id: String { rawValue }
+    
+    var promptDescription: String {
+        switch self {
+        case .studio: return "neutral grey studio background"
+        case .urban: return "blurred city street background"
+        case .nature: return "soft focused park background"
+        case .luxury: return "blurred luxury hotel lobby background"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .studio: return "camera.fill"
+        case .urban: return "building.2.fill"
+        case .nature: return "leaf.fill"
+        case .luxury: return "star.fill"
+        }
+    }
+}
+
+// MARK: - Enums (Continued)
+
 enum ModelHeight: String, CaseIterable, Identifiable {
     case petite = "Petite"
     case average = "Average"
@@ -107,8 +190,6 @@ enum StylistTab: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
 }
-
-// MARK: - Settings View
 
 // MARK: - Integrated Tab Views
 
@@ -268,79 +349,134 @@ extension Array {
     }
 }
 
+// MARK: - Profile Settings View
+
 struct ProfileTabView: View {
     @Binding var showPaywall: Bool
+    
+    // Core Identity
     @AppStorage("stylistModelGender") private var genderRaw = "female"
+    @AppStorage("stylistAgeGroup") private var ageGroupRaw = ModelAgeGroup.millennial.rawValue
     @AppStorage("stylistBodyType") private var bodyTypeRaw = ModelBodyType.slim.rawValue
-    @AppStorage("stylistSkinTone") private var skinToneRaw = SkinTone.medium.rawValue
     @AppStorage("stylistModelHeight") private var heightRaw = ModelHeight.average.rawValue
+    @AppStorage("stylistSkinTone") private var skinToneRaw = SkinTone.medium.rawValue
+    
+    // Hair
+    @AppStorage("stylistHairColor") private var hairColorRaw = ModelHairColor.brown.rawValue
+    @AppStorage("stylistHairStyle") private var hairStyleRaw = ModelHairStyle.wavy.rawValue
+    
+    // Vibe
+    @AppStorage("stylistEnvironment") private var environmentRaw = ModelEnvironment.studio.rawValue
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("GENDER")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(1)
-                        .foregroundColor(PoshTheme.Colors.gold)
-                    
-                    Picker("Gender", selection: $genderRaw) {
-                        Text("Female").tag("female")
-                        Text("Male").tag("male")
-                    }
-                    .pickerStyle(.segmented)
-                }
+            VStack(alignment: .leading, spacing: 32) {
                 
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("BODY TYPE")
+                // SECTION 1: IDENTITY
+                VStack(alignment: .leading, spacing: 20) {
+                    SectionHeader(title: "MODEL IDENTITY")
+                    
+                    HStack(spacing: 20) {
+                        StylistPicker(title: "GENDER", selection: $genderRaw, options: ["female", "male"]) { $0.capitalized }
+                        StylistPicker(title: "AGE GROUP", selection: $ageGroupRaw, options: ModelAgeGroup.allCases.map(\.rawValue)) { $0 }
+                    }
+                    
+                    HStack(spacing: 20) {
+                        StylistPicker(title: "BODY TYPE", selection: $bodyTypeRaw, options: ModelBodyType.allCases.map(\.rawValue)) { $0 }
+                        StylistPicker(title: "HEIGHT", selection: $heightRaw, options: ModelHeight.allCases.map(\.rawValue)) { $0 }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("SKIN TONE")
                             .font(.system(size: 10, weight: .bold))
                             .tracking(1)
                             .foregroundColor(PoshTheme.Colors.gold)
                         
-                        Picker("Body Type", selection: $bodyTypeRaw) {
-                            ForEach(ModelBodyType.allCases) { type in
-                                Text(type.rawValue).tag(type.rawValue)
+                        HStack(spacing: 12) {
+                            ForEach(SkinTone.allCases) { tone in
+                                Circle()
+                                    .fill(tone.color)
+                                    .frame(width: 44, height: 44)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(PoshTheme.Colors.ink, lineWidth: tone.rawValue == skinToneRaw ? 2 : 0)
+                                    )
+                                    .onTapGesture {
+                                        skinToneRaw = tone.rawValue
+                                    }
                             }
                         }
-                        .tint(PoshTheme.Colors.ink)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("HEIGHT")
-                            .font(.system(size: 10, weight: .bold))
-                            .tracking(1)
-                            .foregroundColor(PoshTheme.Colors.gold)
-                        
-                        Picker("Height", selection: $heightRaw) {
-                            ForEach(ModelHeight.allCases) { h in
-                                Text(h.rawValue).tag(h.rawValue)
-                            }
-                        }
-                        .tint(PoshTheme.Colors.ink)
                     }
                 }
                 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("SKIN TONE")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(1)
-                        .foregroundColor(PoshTheme.Colors.gold)
+                // SECTION 2: HAIR
+                VStack(alignment: .leading, spacing: 20) {
+                    SectionHeader(title: "HAIR")
                     
-                    HStack(spacing: 12) {
-                        ForEach(SkinTone.allCases) { tone in
-                            Circle()
-                                .fill(tone.color)
-                                .frame(width: 34, height: 34)
-                                .overlay(
-                                    Circle()
-                                        .stroke(PoshTheme.Colors.ink, lineWidth: tone.rawValue == skinToneRaw ? 2 : 0)
-                                )
-                                .onTapGesture {
-                                    skinToneRaw = tone.rawValue
+                    HStack(spacing: 20) {
+                        // Hair Color with Circles
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("COLOR")
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(1)
+                                .foregroundColor(PoshTheme.Colors.gold)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(ModelHairColor.allCases) { color in
+                                        Circle()
+                                            .fill(color.color)
+                                            .frame(width: 34, height: 34)
+                                            .overlay(Circle().stroke(Color.black.opacity(0.1), lineWidth: 1))
+                                            .overlay(
+                                                Image(systemName: "checkmark")
+                                                    .foregroundColor(color == .white || color == .blonde || color == .silver ? .black : .white)
+                                                    .opacity(color.rawValue == hairColorRaw ? 1 : 0)
+                                            )
+                                            .onTapGesture { hairColorRaw = color.rawValue }
+                                    }
                                 }
+                            }
+                        }
+                    }
+                    
+                    StylistPicker(title: "STYLE", selection: $hairStyleRaw, options: ModelHairStyle.allCases.map(\.rawValue)) { $0 }
+                }
+                
+                // SECTION 3: VIBE
+                VStack(alignment: .leading, spacing: 20) {
+                    SectionHeader(title: "ATMOSPHERE")
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(ModelEnvironment.allCases) { env in
+                            HStack {
+                                Image(systemName: env.icon)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(environmentRaw == env.rawValue ? PoshTheme.Colors.gold : PoshTheme.Colors.ink.opacity(0.5))
+                                    .frame(width: 24)
+                                
+                                Text(env.rawValue)
+                                    .font(.system(size: 14, weight: environmentRaw == env.rawValue ? .semibold : .regular))
+                                    .foregroundColor(PoshTheme.Colors.ink)
+                                
+                                Spacer()
+                                
+                                if environmentRaw == env.rawValue {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(PoshTheme.Colors.gold)
+                                }
+                            }
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(environmentRaw == env.rawValue ? PoshTheme.Colors.gold : PoshTheme.Colors.ink.opacity(0.1), lineWidth: 1)
+                            )
+                            .onTapGesture {
+                                environmentRaw = env.rawValue
+                            }
                         }
                     }
                 }
@@ -348,14 +484,76 @@ struct ProfileTabView: View {
                 Text("These settings help the AI generate a model that best represents you.")
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                    .padding(.top, 10)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
             }
-            .padding()
+            .padding(24)
+        }
+        .background(PoshTheme.Colors.canvas)
+    }
+}
+
+// Helper Views
+struct SectionHeader: View {
+    let title: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 11, weight: .black))
+                .tracking(2)
+                .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+            Divider()
         }
     }
 }
 
-// Deprecated: Keeping for backward compatibility until all refs are gone
+struct StylistPicker<T: Hashable>: View {
+    let title: String
+    @Binding var selection: T
+    let options: [T]
+    let label: (T) -> String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .tracking(1)
+                .foregroundColor(PoshTheme.Colors.gold)
+            
+            Menu {
+                ForEach(options, id: \.self) { option in
+                    Button {
+                        selection = option
+                    } label: {
+                        Text(label(option))
+                        if selection == option { Image(systemName: "checkmark") }
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(label(selection))
+                        .font(.system(size: 14))
+                        .foregroundColor(PoshTheme.Colors.ink)
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10))
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.5))
+                }
+                .padding(12)
+                .background(Color.white)
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(PoshTheme.Colors.border, lineWidth: 0.5)
+                )
+            }
+        }
+    }
+}
+
+// Deprecated wrapper
 struct StylistSettingsView: View {
     @State private var showPaywall = false
     var onStyleMe: (() -> Void)? = nil
@@ -366,7 +564,7 @@ struct StylistSettingsView: View {
                 .sheet(isPresented: $showPaywall) {
                     PaywallView()
                 }
-                .navigationTitle("Profile Settings")
+                .navigationTitle("Model Studio") // Updated Title
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {

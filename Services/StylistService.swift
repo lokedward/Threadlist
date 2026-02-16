@@ -249,6 +249,12 @@ class StylistService {
     @AppStorage("stylistSkinTone") private var skinToneRaw = SkinTone.medium.rawValue
     @AppStorage("stylistModelHeight") private var heightRaw = ModelHeight.average.rawValue
     
+    // New Parameters
+    @AppStorage("stylistAgeGroup") private var ageGroupRaw = ModelAgeGroup.millennial.rawValue
+    @AppStorage("stylistHairColor") private var hairColorRaw = ModelHairColor.brown.rawValue
+    @AppStorage("stylistHairStyle") private var hairStyleRaw = ModelHairStyle.wavy.rawValue
+    @AppStorage("stylistEnvironment") private var environmentRaw = ModelEnvironment.studio.rawValue
+    
     private func generateImage(description: String, gender: Gender) async throws -> UIImage {
         let model = "gemini-2.5-flash-image"
         
@@ -256,21 +262,28 @@ class StylistService {
         let bodyType = ModelBodyType(rawValue: bodyTypeRaw) ?? .slim
         let skinTone = SkinTone(rawValue: skinToneRaw) ?? .medium
         let height = ModelHeight(rawValue: heightRaw) ?? .average
+        let ageGroup = ModelAgeGroup(rawValue: ageGroupRaw) ?? .millennial
+        
+        let hairColor = ModelHairColor(rawValue: hairColorRaw) ?? .brown
+        let hairStyle = ModelHairStyle(rawValue: hairStyleRaw) ?? .wavy
+        let environment = ModelEnvironment(rawValue: environmentRaw) ?? .studio
         
         let genderStr = gender == .male ? "male" : "female"
         
         let fullPrompt = """
         <IMAGE_GENERATION_REQUEST>
         Editorial neck down fashion photo. No faces.
-        Model: \(height.promptDescription) \(genderStr) model, \(skinTone.promptDescription), \(bodyType.promptDescription).
+        Model: \(ageGroup.promptDescription) \(height.promptDescription) \(genderStr) model, \(skinTone.promptDescription), \(bodyType.promptDescription).
+        Hair: \(hairColor.rawValue) \(hairStyle.rawValue) hair.
         Outfit: \(description).
-        Studio lighting, neutral grey background, 8k, highly detailed, photorealistic.
+        Setting: \(environment.promptDescription), blurred depth of field.
+        Lighting: Cinematic lighting fitting the environment, 8k, highly detailed, photorealistic.
         Safety: Strictly fashion-related. No nudity, no violence, no inappropriate content.
         Output: Raw image bytes.
         </IMAGE_GENERATION_REQUEST>
         """
         
-        print("🎨 [Cost Optimization] Generating with settings: \(genderStr), \(bodyType.rawValue), \(skinTone.rawValue), \(height.rawValue)...")
+        print("🎨 [Cost Optimization] Generating with settings: \(genderStr), \(ageGroup.rawValue), \(environment.rawValue)...")
         let base64String = try await callGemini(model: model, prompt: fullPrompt, images: nil, responseType: .image)
         
         guard let data = Data(base64Encoded: base64String), let image = UIImage(data: data) else {
