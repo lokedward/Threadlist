@@ -39,7 +39,7 @@ struct SettingsView: View {
                     .frame(width: 100)
                     .foregroundColor(PoshTheme.Colors.ink)
                     .opacity(0.12) // Increased for better visibility as "black on light"
-                    .padding(.bottom, 85)
+                    .padding(.bottom, 80)
                 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -258,7 +258,7 @@ struct SettingsView: View {
                             .tracking(1)
                             .foregroundColor(PoshTheme.Colors.gold)
                         }
-                        .padding(.top, 55)
+                        .padding(.top, 50)
                     }
                     .padding(.vertical, 24)
                 }
