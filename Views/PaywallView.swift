@@ -55,10 +55,6 @@ struct PaywallView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "crown.fill")
-                .font(.system(size: 44))
-                .foregroundColor(PoshTheme.Colors.gold)
-            
             VStack(spacing: 8) {
                 Text("ELEVATE YOUR STYLE")
                     .poshHeadline(size: 28)

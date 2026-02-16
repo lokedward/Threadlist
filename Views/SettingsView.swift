@@ -94,7 +94,7 @@ struct SettingsView: View {
                                 CategoryManagementView()
                             } label: {
                                 HStack {
-                                    Label("MANAGE CATEGORIES", systemImage: "folder")
+                                    Label("ADD/REMOVE CATEGORIES", systemImage: "folder")
                                         .font(.system(size: 13, weight: .semibold))
                                         .tracking(1)
                                     Spacer()

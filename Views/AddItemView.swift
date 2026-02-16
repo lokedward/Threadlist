@@ -61,6 +61,7 @@ struct AddItemView: View {
     
     // Bulk Upload Completion Tracking
     @State private var bulkItemsSaved: Int = 0
+    @State private var bulkItemsToDisplay: Int = 0
     @State private var showBulkCompletionModal = false
     
     var canSave: Bool {
@@ -163,7 +164,7 @@ struct AddItemView: View {
                 .presentationDetents([.medium])
             }
             .sheet(isPresented: $showBulkCompletionModal) {
-                BulkCompletionModalView(itemsAdded: bulkItemsSaved) {
+                BulkCompletionModalView(itemsAdded: bulkItemsToDisplay) {
                     showBulkCompletionModal = false
                 }
                 .presentationDetents([.medium])
@@ -249,6 +250,7 @@ struct AddItemView: View {
                 if bulkImageQueue.isEmpty {
                     // Show completion modal if items were saved
                     if bulkItemsSaved > 0 {
+                        bulkItemsToDisplay = bulkItemsSaved
                         showBulkCompletionModal = true
                     }
                     bulkItemsSaved = 0
@@ -263,6 +265,7 @@ struct AddItemView: View {
         withAnimation {
             // Show completion modal if any items were saved before aborting
             if bulkItemsSaved > 0 {
+                bulkItemsToDisplay = bulkItemsSaved
                 showBulkCompletionModal = true
             }
             bulkItemsSaved = 0
@@ -335,6 +338,7 @@ struct AddItemView: View {
                             if bulkImageQueue.isEmpty {
                                 // Bulk upload complete - show summary modal
                                 if bulkItemsSaved > 0 {
+                                    bulkItemsToDisplay = bulkItemsSaved
                                     showBulkCompletionModal = true
                                 }
                                 // Reset counter for next session
