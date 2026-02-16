@@ -336,7 +336,7 @@ struct ProfileTabView: View {
                                 .frame(width: 34, height: 34)
                                 .overlay(
                                     Circle()
-                                        .stroke(PoshTheme.Colors.border, lineWidth: tone.rawValue == skinToneRaw ? 2 : 0)
+                                        .stroke(PoshTheme.Colors.ink, lineWidth: tone.rawValue == skinToneRaw ? 2 : 0)
                                 )
                                 .onTapGesture {
                                     skinToneRaw = tone.rawValue
