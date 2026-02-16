@@ -59,6 +59,8 @@ struct AddItemView: View {
     @State private var showingMagicFillExplainer = false
     @AppStorage("hasSeenMagicFillExplainer") private var hasSeenMagicFillExplainer = false
     
+    @AppStorage("isMagicFillAutoEnabled") private var isMagicFillAutoEnabled = false
+    
     // Bulk Upload Completion Tracking
     @State private var bulkItemsSaved: Int = 0
     @State private var bulkItemsToDisplay: Int = 0
@@ -189,6 +191,7 @@ struct AddItemView: View {
             .sheet(isPresented: $showingMagicFillExplainer) {
                 MagicFillExplainerView {
                     hasSeenMagicFillExplainer = true
+                    isMagicFillAutoEnabled = true // Enable for entire bulk session if accepted
                     showingMagicFillExplainer = false
                     executeMagicFill()
                 }
@@ -390,8 +393,11 @@ struct AddItemView: View {
                                 bulkItemsSaved = 0
                                 resetForm()
                             } else {
-                                // Skip Magic Fill for bulk items - just clear form for speed
-                                // User can manually fill or skip
+                                // Magic Fill Loop if enabled
+                                if isMagicFillAutoEnabled {
+                                    // Use executeMagicFill directly as we don't need explainer check
+                                    executeMagicFill()
+                                }
                             }
                         }
                     }
