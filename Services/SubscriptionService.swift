@@ -117,6 +117,7 @@ class SubscriptionService: ObservableObject {
     // MARK: - StoreKit 2 Implementation
     
     func fetchProducts() async {
+        isLoaded = false
         loadError = nil
         do {
             let ids = SubscriptionTier.allCases.compactMap { $0.productId }
