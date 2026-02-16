@@ -27,9 +27,8 @@ struct BulkCompletionModalView: View {
                     .padding(.top, 20)
                     
                     Text(itemsAdded == 1 ? "ITEM ADDED" : "UPLOAD COMPLETE")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                         .tracking(3)
-                        .foregroundColor(PoshTheme.Colors.ink)
                 }
                 
                 // Summary
