@@ -58,7 +58,11 @@ enum SubscriptionTier: String, Codable, CaseIterable {
 class SubscriptionService: ObservableObject {
     static let shared = SubscriptionService()
     
-    @Published private(set) var currentTier: SubscriptionTier = .free
+    @Published private(set) var currentTier: SubscriptionTier = .free {
+        didSet {
+            UserDefaults.standard.set(currentTier.rawValue, forKey: tierKey)
+        }
+    }
     @Published private(set) var magicFillCount = 0
     @Published private(set) var generationCount = 0
     @Published private(set) var monthlyGenerationCount = 0
@@ -82,6 +86,12 @@ class SubscriptionService: ObservableObject {
         self.magicFillCount = UserDefaults.standard.integer(forKey: magicFillKey)
         self.generationCount = UserDefaults.standard.integer(forKey: generationKey)
         self.monthlyGenerationCount = UserDefaults.standard.integer(forKey: monthlyGenerationKey)
+        
+        // Load persisted tier
+        if let savedTierRaw = UserDefaults.standard.string(forKey: tierKey),
+           let savedTier = SubscriptionTier(rawValue: savedTierRaw) {
+            self.currentTier = savedTier
+        }
         
         checkAndResetLimits()
         
