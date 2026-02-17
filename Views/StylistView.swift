@@ -289,6 +289,9 @@ struct StylistView: View {
     }
     
     private func performAISuggestion() {
+        // Guard against multiple taps/executions
+        guard !isStyling, !isGenerating else { return }
+        
         // Check Limit
         if !SubscriptionService.shared.canPerformStyleMe() {
             showPaywall = true
