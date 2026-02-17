@@ -125,7 +125,7 @@ class StylistService {
         let prompt = """
         You are a high-end personal stylist for a premium fashion app.
         
-        GOAL: Pick the BEST outfit from the user's closet.
+        GOAL: Pick the BEST outfit from the user's closet and provide a technical visual description for an image generator.
         
         TARGET PARAMETERS:
         - Occasion: \(occasion)
@@ -143,7 +143,8 @@ class StylistService {
         4. Output only a JSON object:
         {
           "ids": ["UUID-1", "UUID-2"],
-          "explanation": "A very brief (1 sentence) stylish explanation of why this look fits the requested vibe and occasion."
+          "explanation": "A very brief (1 sentence) stylish explanation of why this look fits the requested vibe and occasion.",
+          "visual_description": "A highly detailed visual description of the combined look. Describe the specific fabrics (e.g., 'heavyweight cotton', 'merino wool'), colors, textures, and fit (e.g. 'oversized', 'tapered') of the selected items as they would appear together. This is for a photorealistic image generator."
         }
         
         Randomization seed: \(timestamp)
@@ -166,17 +167,18 @@ class StylistService {
         struct SuggestionResponse: Codable {
             let ids: [String]
             let explanation: String
+            let visual_description: String
         }
         
         let decoded = try JSONDecoder().decode(SuggestionResponse.self, from: jsonData)
         let uuids = decoded.ids.compactMap { UUID(uuidString: $0) }
         
-        return (Set(uuids), decoded.explanation)
+        return (Set(uuids), decoded.visual_description)
     }
     
     // MARK: - Core Pipeline
     
-    func generateModelPhoto(items: [ClothingItem], gender: Gender) async throws -> UIImage {
+    func generateModelPhoto(items: [ClothingItem], gender: Gender, preComputedDescription: String? = nil) async throws -> UIImage {
         guard !items.isEmpty else { throw StylistError.noItemsSelected }
         
         // Check usage limits
@@ -185,15 +187,17 @@ class StylistService {
             throw StylistError.limitReached(limit: tier.styleMeLimit, period: tier.limitPeriod == .monthly ? "monthly" : "daily")
         }
         
-        // 1. Prepare Images
-        var garmentImages: [Data] = []
-        for item in items {
-            if let img = await ImageStorageService.shared.loadImage(withID: item.imageID),
-               let data = img.jpegData(compressionQuality: 0.7) {
-                garmentImages.append(data)
+        // 1. Prepare Images (Only if needed for analysis)
+        func getGarmentImages() async -> [Data] {
+            var images: [Data] = []
+            for item in items {
+                if let img = await ImageStorageService.shared.loadImage(withID: item.imageID),
+                   let data = img.jpegData(compressionQuality: 0.7) {
+                    images.append(data)
+                }
             }
+            return images
         }
-        guard !garmentImages.isEmpty else { throw StylistError.invalidImageData }
         
         // 2. Cache Check: Do we already have this exact outfit?
         if let cachedImage = OutfitCacheService.shared.getCachedImage(for: items, gender: gender) {
@@ -201,13 +205,31 @@ class StylistService {
             return cachedImage
         }
         
-        // 3. Step A: Vision Analysis (Gemini 2.5 Flash)
+        // 3. Step A: Vision Analysis or use Pre-computed Description
         let description: String
-        if let cachedDesc = OutfitCacheService.shared.getCachedDescription(for: items, gender: gender) {
+        if let preComputed = preComputedDescription {
+            print("✨ Using pre-computed description. Skipping Vision step.")
+            description = preComputed
+            OutfitCacheService.shared.cacheDescription(description, for: items, gender: gender)
+        } else if let cachedDesc = OutfitCacheService.shared.getCachedDescription(for: items, gender: gender) {
             print("📝 Description Cache Hit.")
             description = cachedDesc
         } else {
-            description = try await analyzeGarments(images: garmentImages)
+            let garmentImages = await getGarmentImages()
+            guard !garmentImages.isEmpty else { throw StylistError.invalidImageData }
+            
+            // Optimization: Resize images to 512px max for analysis to reduce upload time
+            var optimizedImages: [Data] = []
+            for data in garmentImages {
+                if let img = UIImage(data: data) {
+                    let resized = resizeImage(img, targetSize: CGSize(width: 512, height: 512))
+                    if let resizedData = resized.jpegData(compressionQuality: 0.6) {
+                        optimizedImages.append(resizedData)
+                    }
+                }
+            }
+            
+            description = try await analyzeGarments(images: optimizedImages.isEmpty ? garmentImages : optimizedImages)
             OutfitCacheService.shared.cacheDescription(description, for: items, gender: gender)
         }
         

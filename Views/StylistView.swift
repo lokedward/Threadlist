@@ -307,8 +307,8 @@ struct StylistView: View {
         
         Task {
             do {
-                // 1. Pick the items
-                let (suggestedIDs, _) = try await StylistService.shared.suggestOutfit(for: targetOccasion, availableItems: items)
+                // 1. Pick the items & get the visual description in one go
+                let (suggestedIDs, visualDescription) = try await StylistService.shared.suggestOutfit(for: targetOccasion, availableItems: items)
                 
                 await MainActor.run {
                     withAnimation(.spring()) {
@@ -325,7 +325,8 @@ struct StylistView: View {
                     
                     let image = try await StylistService.shared.generateModelPhoto(
                         items: selectedClothingItems,
-                        gender: modelGender
+                        gender: modelGender,
+                        preComputedDescription: visualDescription
                     )
                     
                     await MainActor.run {
