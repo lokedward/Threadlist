@@ -13,6 +13,7 @@ struct EmailImportView: View {
     @State private var importedItems: [EmailProductItem] = []
     @State private var showingReviewScreen = false
     @State private var showingBulkAddFlow = false
+    @State private var showingPaywall = false
     
     var body: some View {
         ZStack {
@@ -33,7 +34,7 @@ struct EmailImportView: View {
         }
         .alert("Upgrade Required", isPresented: $showingUpgradePrompt) {
             Button("Upgrade to Premium") {
-                // TODO: Navigate to subscription screen
+                showingPaywall = true
             }
             Button("Use 6 Months", role: .cancel) {
                 selectedRange = .sixMonths
@@ -255,6 +256,9 @@ struct EmailImportView: View {
         .background(PoshTheme.Colors.canvas)
         .fullScreenCover(isPresented: $showingBulkAddFlow) {
             AddItemView(prefilledItems: importedItems)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
         }
     }
     

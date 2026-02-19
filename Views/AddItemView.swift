@@ -98,6 +98,7 @@ struct AddItemView: View {
                 size: $size,
                 tagsText: $tagsText,
                 isMetadataExpanded: $isMetadataExpanded,
+                isMagicFillAutoEnabled: $isMagicFillAutoEnabled,
                 selectedImage: selectedImage,
                 bulkImageQueue: bulkImageQueue,
                 totalBulkItems: totalBulkItems,
@@ -476,6 +477,7 @@ struct MainFormView: View {
     @Binding var size: String
     @Binding var tagsText: String
     @Binding var isMetadataExpanded: Bool
+    @Binding var isMagicFillAutoEnabled: Bool
     
     let selectedImage: UIImage?
     let bulkImageQueue: [UIImage]
@@ -528,7 +530,8 @@ struct MainFormView: View {
                                     size: $size, tagsText: $tagsText, isExpanded: $isMetadataExpanded,
                                     showExpandButton: additionMode == .multiple, categories: categories,
                                     onMagicFill: onMagicFill,
-                                    canMagicFill: (additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty)
+                                    canMagicFill: (additionMode == .single ? selectedImage != nil : !bulkImageQueue.isEmpty),
+                                    isMagicFillAutoEnabled: $isMagicFillAutoEnabled
                                 )
                                 
                                 Button(action: {
@@ -639,6 +642,7 @@ struct DetailsSectionView: View {
     let categories: [Category]
     let onMagicFill: () -> Void
     let canMagicFill: Bool
+    @Binding var isMagicFillAutoEnabled: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -648,31 +652,35 @@ struct DetailsSectionView: View {
                 Spacer()
                 
                 if canMagicFill {
-                    Button(action: onMagicFill) {
+                    Button(action: {
+                        isMagicFillAutoEnabled.toggle()
+                        if isMagicFillAutoEnabled {
+                            onMagicFill()
+                        }
+                    }) {
                         HStack(spacing: 6) {
-                            Image(systemName: "sparkles")
+                            Image(systemName: isMagicFillAutoEnabled ? "sparkles" : "wand.and.stars")
                                 .font(.system(size: 9, weight: .bold))
-                            Text("AI MAGIC FILL")
+                            Text(isMagicFillAutoEnabled ? "MAGIC FILL ACTIVE" : "ENABLE MAGIC FILL")
                                 .font(.system(size: 9, weight: .bold))
                                 .tracking(1)
                         }
-                        .foregroundColor(PoshTheme.Colors.ink)
+                        .foregroundColor(isMagicFillAutoEnabled ? .white : PoshTheme.Colors.ink)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
                         .background(
                             ZStack {
-                                Color.white
-                                Capsule()
-                                    .stroke(PoshTheme.Colors.gold.opacity(0.4), lineWidth: 1)
-                                LinearGradient(
-                                    colors: [PoshTheme.Colors.gold.opacity(0.12), PoshTheme.Colors.gold.opacity(0.04)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                .clipShape(Capsule())
+                                if isMagicFillAutoEnabled {
+                                    PoshTheme.Colors.gold
+                                } else {
+                                    Color.white
+                                    Capsule()
+                                        .stroke(PoshTheme.Colors.gold.opacity(0.4), lineWidth: 1)
+                                }
                             }
                         )
                         .clipShape(Capsule())
+                        .shadow(color: isMagicFillAutoEnabled ? PoshTheme.Colors.gold.opacity(0.3) : .clear, radius: 4, x: 0, y: 2)
                     }
                     .buttonStyle(.plain)
                 }
