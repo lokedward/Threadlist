@@ -7,9 +7,7 @@ struct CropView: View {
     let onCancel: () -> Void
     
     // Configuration
-    // Standard industry crop is Square (1:1) or Portrait (4:5). 
-    // Let's stick to Square 1:1 for a consistent grid layout in the app.
-    private let cropAspectRatio: CGFloat = 1.0 
+    // Defaulting to the image's original aspect ratio to allow full resolution.
     
     // View State
     @State private var scale: CGFloat = 1.0
@@ -140,30 +138,25 @@ struct CropView: View {
     private func configureLayout(in size: CGSize) {
         containerSize = size
         
-        // 1. Calculate Crop Box Size (Square with padding)
+        // 1. Calculate Crop Box Size (Fit Original Aspect Ratio)
         let padding: CGFloat = 20
         let availableWidth = size.width - (padding * 2)
-        // Ensure we don't exceed available height
-        let cropDimension = min(availableWidth, size.height - 150)
+        let availableHeight = size.height - 150
         
-        cropSize = CGSize(width: cropDimension, height: cropDimension / cropAspectRatio)
+        let imgRatio = image.size.height == 0 ? 1.0 : (image.size.width / image.size.height)
         
-        // 2. Calculate Base Image Size (Aspect Fill)
-        // The image usually starts fitting the crop box perfectly
-        let imgRatio = image.size.width / image.size.height
-        let cropRatio = cropSize.width / cropSize.height
+        var cropW = availableWidth
+        var cropH = cropW / imgRatio
         
-        if imgRatio > cropRatio {
-            // Image is wider than crop -> Fit Height, Scale Width
-            let height = cropSize.height
-            let width = height * imgRatio
-            imageSize = CGSize(width: width, height: height)
-        } else {
-            // Image is taller -> Fit Width, Scale Height
-            let width = cropSize.width
-            let height = width / imgRatio
-            imageSize = CGSize(width: width, height: height)
+        if cropH > availableHeight {
+            cropH = availableHeight
+            cropW = cropH * imgRatio
         }
+        
+        cropSize = CGSize(width: cropW, height: cropH)
+        
+        // 2. Base Image Size (Perfect Fit)
+        imageSize = cropSize
         
         // 3. Reset State
         scale = 1.0
