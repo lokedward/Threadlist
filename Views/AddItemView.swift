@@ -753,6 +753,8 @@ struct AddItemPickerModifiers: ViewModifier {
     @Binding var imageToCrop: UIImage?
     @Binding var isProcessingImage: Bool
     
+    @State private var showingPasteboardAlert = false
+    
     let onInitialImage: (UIImage) -> Void
     let onFinalImage: (UIImage) -> Void
     let onBulkProcessed: ([UIImage]) -> Void
@@ -762,10 +764,25 @@ struct AddItemPickerModifiers: ViewModifier {
             .confirmationDialog("Choose Photo Source", isPresented: $showingImageSourcePicker) {
                 Button("Take Photo") { showingCamera = true }
                 Button("Choose from Library") { showingPhotoPicker = true }
+                
+                Button("Paste from Clipboard") {
+                    if UIPasteboard.general.hasImages, let pasteboardImage = UIPasteboard.general.image {
+                        // Run on MainActor if needed, but onInitialImage appears synchronous UI update
+                        onInitialImage(pasteboardImage)
+                    } else {
+                        showingPasteboardAlert = true
+                    }
+                }
+                
                 Button("Cancel", role: .cancel) {}
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
             .photosPicker(isPresented: $showingBulkPhotoPicker, selection: $selectedPhotoItems, maxSelectionCount: 50, matching: .images)
+            .alert("No Image Found", isPresented: $showingPasteboardAlert) {
+                Button("Got It", role: .cancel) {}
+            } message: {
+                Text("You can copy images directly from your browser, camera roll, or other apps and paste them right into your wardrobe!")
+            }
             .fullScreenCover(isPresented: $showingCamera, onDismiss: handleCameraDismiss) {
                 ImagePickerView(image: $imageToCrop, sourceType: .camera)
             }

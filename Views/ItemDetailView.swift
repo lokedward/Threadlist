@@ -34,6 +34,7 @@ struct ItemDetailView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var newImage: UIImage?
     @State private var isProcessingImage = false
+    @State private var showingPasteboardAlert = false
     
     var body: some View {
         ZStack {
@@ -135,11 +136,22 @@ struct ItemDetailView: View {
                 showingPhotoPicker = true
             }
             
-
+            Button("Paste from Clipboard") {
+                if UIPasteboard.general.hasImages, let pasteboardImage = UIPasteboard.general.image {
+                    croppingItem = CroppableImage(image: pasteboardImage)
+                } else {
+                    showingPasteboardAlert = true
+                }
+            }
             
             Button("Cancel", role: .cancel) {}
         }
         .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
+        .alert("No Image Found", isPresented: $showingPasteboardAlert) {
+            Button("Got It", role: .cancel) {}
+        } message: {
+            Text("You can copy images directly from your browser, camera roll, or other apps and paste them right into your wardrobe!")
+        }
         .fullScreenCover(isPresented: $showingCamera, onDismiss: {
             // Ensure camera is fully dismissed on iOS 18 before selecting the cropping item
             if let image = imageToCrop {
