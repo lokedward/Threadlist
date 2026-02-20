@@ -15,7 +15,7 @@ struct BulkCompletionModalView: View {
             VStack(spacing: 40) {
                 // Success Icon
                 Image(systemName: "checkmark")
-                    .font(.system(size: 44, weight: .ultraLight))
+                    .font(.system(size: 44))
                     .foregroundColor(PoshTheme.Colors.gold)
                     .padding(.top, 40)
                 
@@ -47,7 +47,7 @@ struct BulkCompletionModalView: View {
                     onDismiss()
                     dismiss()
                 }) {
-                    Text("VIEW WARDROBE")
+                    Text("ADD MORE")
                         .frame(maxWidth: .infinity)
                 }
                 .poshButton()
