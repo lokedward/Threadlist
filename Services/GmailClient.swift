@@ -118,6 +118,7 @@ class GmailClient {
             let messages: [MessageRef]?
             struct MessageRef: Codable {
                 let id: String
+                let threadId: String
             }
         }
         
@@ -127,13 +128,23 @@ class GmailClient {
             return [] // No messages found
         }
         
-        print("✅ Found \(messageRefs.count) email(s) matching query")
-        print("📧 Found \(messageRefs.count) emails matching order confirmations")
+        // Deduplicate by threadId to avoid parsing the same order twice
+        var uniqueThreadIds = Set<String>()
+        var deduplicatedRefs: [SearchResponse.MessageRef] = []
+        for ref in messageRefs {
+            if !uniqueThreadIds.contains(ref.threadId) {
+                uniqueThreadIds.insert(ref.threadId)
+                deduplicatedRefs.append(ref)
+            }
+        }
+        
+        print("✅ Found \(deduplicatedRefs.count) unique email thread(s) matching query")
+        print("📧 Found \(deduplicatedRefs.count) emails matching order confirmations")
         
         // Step 2: Fetch full message details for each ID
         var messages: [GmailMessage] = []
         
-        for messageRef in messageRefs {
+        for messageRef in deduplicatedRefs {
             if let message = try? await fetchMessage(id: messageRef.id, token: token) {
                 messages.append(message)
                 print("📧 Fetched email from: \(message.from), subject: \(message.subject)")

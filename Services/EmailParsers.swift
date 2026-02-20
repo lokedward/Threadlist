@@ -259,21 +259,15 @@ class GenericEmailParser: EmailParser {
                     continue
                 }
                 
-                // Clean Name
-                let productName = cleanProductName(altText)
-                guard !productName.isEmpty else { continue }
+                // Clean Name - Fallback to context if alt is empty or generic
+                var productName = cleanProductName(altText)
+                if productName.isEmpty {
+                    if let extractedName = extractNameFromContext(context) {
+                        productName = extractedName
+                    }
+                }
                 
-                // 2. Score Calculation
-                var score = 0
-                
-                // Base structure requirement: Image + Price nearby
-                // Check context (+/- 500 chars) for price
-                let context = extractNearbyText(from: html, around: tagRange)
                 let hasPrice = hasPricePattern(context)
-                
-                // STRICT RULE: If unknown brand AND no clothing keyword, MUST have price
-                // Actually, user said "Price anchored block".
-                // We'll give points for price.
                 
                 if hasPrice {
                     score += 10 // Baseline for valid structure
@@ -292,15 +286,11 @@ class GenericEmailParser: EmailParser {
                 }
                 
                 // Size/Qty clues in context (heuristic)
-                if context.localizedCaseInsensitiveContains("Qty") || context.localizedCaseInsensitiveContains("Quantity") {
+                if context.localizedCaseInsensitiveContains("Qty") || 
+                   context.localizedCaseInsensitiveContains("Quantity") ||
+                   context.localizedCaseInsensitiveContains("Size:") {
                     score += 20
                 }
-                
-                // Filtering Decision
-                // We keep items if they are:
-                // A) High confidence (Keyword/Brand match) -> Score > 50
-                // B) Structural match (Price + Image) -> Score >= 10
-                // We DROP items if Score <= 0 (e.g. Image only, no price, no keywords)
                 
                 if score > 0 {
                     seenURLs.insert(imageURL)
@@ -367,7 +357,7 @@ class GenericEmailParser: EmailParser {
     
     
     // Helper to extract specific price string (heuristic)
-    private func extractPrice(from text: String) -> String? {
+    func extractPrice(from text: String) -> String? {
         let priceRegex = #"\$\d+([.,]\d{2})?"#
         if let range = text.range(of: priceRegex, options: .regularExpression) {
             return String(text[range])
@@ -375,7 +365,7 @@ class GenericEmailParser: EmailParser {
         return nil
     }
     
-    private func extractAttribute(_ name: String, from text: String) -> String? {
+    func extractAttribute(_ name: String, from text: String) -> String? {
         let pattern = name + #"=["']([^"']+)["']"#
         if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
            let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
@@ -386,13 +376,12 @@ class GenericEmailParser: EmailParser {
         return nil
     }
     
-    private func extractNearbyText(from html: String, around range: Range<String.Index>) -> String {
-        // Extract +/- 300 chars
+    func extractNearbyText(from html: String, around range: Range<String.Index>, offset: Int = 300) -> String {
         let startOffset = html.distance(from: html.startIndex, to: range.lowerBound)
         let endOffset = html.distance(from: html.startIndex, to: range.upperBound)
         
-        let start = max(0, startOffset - 300)
-        let end = min(html.count, endOffset + 300)
+        let start = max(0, startOffset - offset)
+        let end = min(html.count, endOffset + offset)
         
         let startIndex = html.index(html.startIndex, offsetBy: start)
         let endIndex = html.index(html.startIndex, offsetBy: end)
@@ -400,7 +389,7 @@ class GenericEmailParser: EmailParser {
         return String(html[startIndex..<endIndex])
     }
     
-    private func hasPricePattern(_ text: String) -> Bool {
+    func hasPricePattern(_ text: String) -> Bool {
         let priceRegex = #"\$\d+([.,]\d{2})?|\d+([.,]\d{2})?\s*USD"#
         return text.range(of: priceRegex, options: [.regularExpression, .caseInsensitive]) != nil
     }
@@ -413,15 +402,50 @@ class GenericEmailParser: EmailParser {
             .replacingOccurrences(of: "&quot;", with: "\"")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Remove common noise words
-        let noiseWords = ["image", "product", "item"]
+        // Remove common noise words (exact matches)
+        let noiseWords = [
+            "image", "product", "item", "cart image", "product image", 
+            "picture", "photo", "thumbnail", "clothing", "apparel"
+        ]
+        
+        let lowerCleaned = cleaned.lowercased()
         for noise in noiseWords {
-            if cleaned.lowercased() == noise {
+            if lowerCleaned == noise {
                 return ""
             }
         }
         
+        // If the alt text is ridiculously short (e.g. "1", "a"), it's not a product name
+        if cleaned.count <= 2 {
+            return ""
+        }
+        
         return cleaned
+    }
+    
+    func extractNameFromContext(_ context: String) -> String? {
+        let linkPattern = #"<a[^>]*>([^<]+)</a>"#
+        
+        if let regex = try? NSRegularExpression(pattern: linkPattern, options: .caseInsensitive) {
+            let matches = regex.matches(in: context, range: NSRange(context.startIndex..., in: context))
+            
+            for match in matches {
+                if match.numberOfRanges >= 2,
+                   let range = Range(match.range(at: 1), in: context) {
+                    let text = String(context[range])
+                    let cleaned = cleanProductName(text)
+                    
+                    if !cleaned.isEmpty && 
+                       !ClothingDetector.isBlacklisted(cleaned) &&
+                       !ClothingDetector.isBrandName(cleaned) &&
+                       !hasPricePattern(cleaned) &&
+                       cleaned.count < 100 {
+                        return cleaned
+                    }
+                }
+            }
+        }
+        return nil
     }
     
     private func removePromotionalContent(_ html: String) -> String {
@@ -642,5 +666,61 @@ class ZaraEmailParser: EmailParser {
         }
         
         return products
+    }
+}
+
+// MARK: - Lululemon Parser
+
+class LululemonEmailParser: EmailParser {
+    func extractProducts(from email: GmailMessage) async throws -> [ProductData] {
+        guard let html = email.htmlBody else { return [] }
+        
+        let genericParser = GenericEmailParser()
+        let products = genericParser.extractProducts(from: html)
+        
+        // Ensure brand is mapped
+        return products.map { product in
+            ProductData(
+                name: product.name,
+                imageURL: product.imageURL,
+                price: product.price,
+                brand: "Lululemon",
+                size: product.size,
+                color: product.color,
+                category: product.category,
+                tags: product.tags,
+                score: product.score + 10
+            )
+        }
+    }
+}
+
+// MARK: - Adidas Parser
+
+class AdidasEmailParser: EmailParser {
+    func extractProducts(from email: GmailMessage) async throws -> [ProductData] {
+        guard let html = email.htmlBody else { return [] }
+        
+        var products: [ProductData] = []
+        let genericParser = GenericEmailParser()
+        
+        // Fallback or explicit adidas pattern
+        // It's often easier to leverage Generic parsing since we upgraded it to use context names
+        let genericProducts = genericParser.extractProducts(from: html)
+        
+        // Ensure brand is mapped
+        return genericProducts.map { product in
+            ProductData(
+                name: product.name,
+                imageURL: product.imageURL,
+                price: product.price,
+                brand: "Adidas",
+                size: product.size,
+                color: product.color,
+                category: product.category,
+                tags: product.tags,
+                score: product.score + 10
+            )
+        }
     }
 }

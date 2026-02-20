@@ -117,7 +117,7 @@ class EmailOnboardingService: ObservableObject {
         
         for (index, email) in emails.enumerated() {
             // Determine retailer for progress message
-            let retailer = detectRetailer(from: email.from)
+            let retailer = detectRetailer(from: email)
             
             await MainActor.run {
                 progress?.processedEmails = index + 1
@@ -171,15 +171,25 @@ class EmailOnboardingService: ObservableObject {
         return uniqueProducts
     }
     
-    private func detectRetailer(from email: String) -> String {
-        let lowercased = email.lowercased()
+    private func detectRetailer(from email: GmailMessage) -> String {
+        let fromLower = email.from.lowercased()
+        let bodyLower = email.htmlBody?.lowercased() ?? ""
+        let subjectLower = email.subject.lowercased()
         
-        if lowercased.contains("amazon") { return "Amazon" }
-        if lowercased.contains("nike") { return "Nike" }
-        if lowercased.contains("zara") { return "Zara" }
-        if lowercased.contains("nordstrom") { return "Nordstrom" }
-        if lowercased.contains("macys") { return "Macy's" }
-        if lowercased.contains("target") { return "Target" }
+        // Helper to check where a retailer name appears
+        func isRetailer(_ name: String) -> Bool {
+            return fromLower.contains(name) ||
+                   (subjectLower.contains("fwd:") && (subjectLower.contains(name) || bodyLower.contains(name)))
+        }
+        
+        if isRetailer("amazon") { return "Amazon" }
+        if isRetailer("nike") { return "Nike" }
+        if isRetailer("zara") { return "Zara" }
+        if isRetailer("lululemon") { return "Lululemon" }
+        if isRetailer("adidas") { return "Adidas" }
+        if isRetailer("nordstrom") { return "Nordstrom" }
+        if isRetailer("macys") { return "Macy's" }
+        if isRetailer("target") { return "Target" }
         
         return "online store"
     }
@@ -200,15 +210,19 @@ class EmailOnboardingService: ObservableObject {
     }
     
     private func selectParser(for email: GmailMessage) -> EmailParser {
-        let from = email.from.lowercased()
+        let retailer = detectRetailer(from: email).lowercased()
         
-        // Detect retailer from sender
-        if from.contains("amazon") {
+        // Detect retailer from sender or forwarded content
+        if retailer == "amazon" {
             return AmazonEmailParser()
-        } else if from.contains("nike") {
+        } else if retailer == "nike" {
             return NikeEmailParser()
-        } else if from.contains("zara") {
+        } else if retailer == "zara" {
             return ZaraEmailParser()
+        } else if retailer == "lululemon" {
+            return LululemonEmailParser()
+        } else if retailer == "adidas" {
+            return AdidasEmailParser()
         } else {
             // Generic parser for unknown retailers
             return GenericEmailParser()
