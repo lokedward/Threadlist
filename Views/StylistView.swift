@@ -240,43 +240,51 @@ struct StylistView: View {
                     .tracking(1)
                     .foregroundColor(PoshTheme.Colors.gold)
                 
-                let used = subscription.currentTier.limitPeriod == .monthly ? subscription.monthlyGenerationCount : subscription.generationCount
-                let limit = subscription.currentTier.styleMeLimit
-                
-                Text("\(limit - used) of \(limit) looks available")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(PoshTheme.Colors.ink)
-            }
-            
-            Divider()
-                .background(PoshTheme.Colors.ink.opacity(0.1))
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text("PREMIUM TIER")
-                    .font(.system(size: 9, weight: .bold))
-                    .tracking(1)
-                    .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
-                
-                HStack {
-                    Text("Boutique Plus")
-                        .font(.system(size: 12, weight: .semibold))
-                    Spacer()
-                    Text("50 / mo")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(PoshTheme.Colors.gold)
-                }
-                
-                Button {
-                    showingUsagePopup = false
-                    showPaywall = true
-                } label: {
-                    Text("UPGRADE NOW")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1)
-                        .underline()
+                if subscription.currentTier == .atelier {
+                    Text("Unlimited looks available")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(PoshTheme.Colors.ink)
+                } else {
+                    let used = subscription.currentTier.limitPeriod == .monthly ? subscription.monthlyGenerationCount : subscription.generationCount
+                    let limit = subscription.currentTier.styleMeLimit
+                    
+                    Text("\(limit - used) of \(limit) looks available")
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(PoshTheme.Colors.ink)
                 }
-                .padding(.top, 4)
+            }
+            
+            if subscription.currentTier != .atelier {
+                Divider()
+                    .background(PoshTheme.Colors.ink.opacity(0.1))
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("PREMIUM TIER")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.4))
+                    
+                    HStack {
+                        Text(subscription.currentTier == .free ? "Boutique Plus" : "Atelier Elite")
+                            .font(.system(size: 12, weight: .semibold))
+                        Spacer()
+                        Text(subscription.currentTier == .free ? "50 / mo" : "Unlimited")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(PoshTheme.Colors.gold)
+                    }
+                    
+                    Button {
+                        showingUsagePopup = false
+                        showPaywall = true
+                    } label: {
+                        Text("UPGRADE NOW")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1)
+                            .underline()
+                            .foregroundColor(PoshTheme.Colors.ink)
+                    }
+                    .padding(.top, 4)
+                }
             }
         }
         .padding(16)

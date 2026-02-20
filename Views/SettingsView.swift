@@ -259,7 +259,8 @@ struct SettingsView: View {
                         }
                         .padding(.top, 50)
                     }
-                    .padding(.vertical, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 160)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
