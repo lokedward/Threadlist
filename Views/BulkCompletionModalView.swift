@@ -11,7 +11,14 @@ struct BulkCompletionModalView: View {
     var body: some View {
         ZStack {
             PoshTheme.Colors.canvas.ignoresSafeArea()
-
+            
+            VStack(spacing: 40) {
+                // Success Icon
+                Image(systemName: "checkmark")
+                    .font(.system(size: 44))
+                    .foregroundColor(PoshTheme.Colors.gold)
+                    .padding(.top, 40)
+                
                 VStack(spacing: 12) {
                     Text(itemsAdded == 1 ? "ITEM ADDED" : "UPLOAD COMPLETE")
                         .poshHeadline(size: 16)
