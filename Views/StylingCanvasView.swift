@@ -21,7 +21,7 @@ struct StylingCanvasView: View {
     
     // Share Sheet State
     @State private var isProcessingShare = false
-    @State private var showShareSheet = false
+    @State private var showTearSheetPreview = false
     @State private var tearSheetImage: UIImage?
     
     let stylistService = StylistService.shared
@@ -235,10 +235,9 @@ struct StylingCanvasView: View {
         .sheet(isPresented: $showUpgradePrompt) {
             PaywallView()
         }
-        .sheet(isPresented: $showShareSheet) {
+        .sheet(isPresented: $showTearSheetPreview) {
             if let imageToShare = tearSheetImage {
-                ShareSheet(activityItems: [imageToShare])
-                    .presentationDetents([.medium, .large])
+                TearSheetPreviewView(image: imageToShare)
             }
         }
     }
@@ -339,7 +338,7 @@ struct StylingCanvasView: View {
                 
                 if let cgImage = renderer.cgImage {
                     self.tearSheetImage = UIImage(cgImage: cgImage)
-                    self.showShareSheet = true
+                    self.showTearSheetPreview = true
                 } else {
                     self.errorMessage = "Failed to render share image."
                 }

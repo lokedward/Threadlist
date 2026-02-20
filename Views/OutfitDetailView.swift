@@ -9,7 +9,7 @@ struct OutfitDetailView: View {
     let heroImage: UIImage
     
     @State private var isProcessingShare = false
-    @State private var showShareSheet = false
+    @State private var showTearSheetPreview = false
     @State private var tearSheetImage: UIImage?
     @State private var errorMessage: String?
     
@@ -95,10 +95,9 @@ struct OutfitDetailView: View {
         }
         .navigationTitle("Curated Look")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showShareSheet) {
+        .sheet(isPresented: $showTearSheetPreview) {
             if let imageToShare = tearSheetImage {
-                ShareSheet(activityItems: [imageToShare])
-                    .presentationDetents([.medium, .large])
+                TearSheetPreviewView(image: imageToShare)
             }
         }
     }
@@ -138,7 +137,7 @@ struct OutfitDetailView: View {
                 
                 if let cgImage = renderer.cgImage {
                     self.tearSheetImage = UIImage(cgImage: cgImage)
-                    self.showShareSheet = true
+                    self.showTearSheetPreview = true
                 } else {
                     self.errorMessage = "Failed to render share image."
                 }
