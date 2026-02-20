@@ -259,6 +259,9 @@ class GenericEmailParser: EmailParser {
                     continue
                 }
                 
+                // Check context (+/- 500 chars) for price & name
+                let context = extractNearbyText(from: html, around: tagRange, offset: 500)
+                
                 // Clean Name - Fallback to context if alt is empty or generic
                 var productName = cleanProductName(altText)
                 if productName.isEmpty {
@@ -266,6 +269,11 @@ class GenericEmailParser: EmailParser {
                         productName = extractedName
                     }
                 }
+                
+                guard !productName.isEmpty else { continue }
+                
+                // 2. Score Calculation
+                var score = 0
                 
                 let hasPrice = hasPricePattern(context)
                 
@@ -298,6 +306,51 @@ class GenericEmailParser: EmailParser {
                         name: productName,
                         imageURL: imageURL,
                         price: extractPrice(from: context), // Extract actual string if possible
+                        brand: nil,
+                        size: nil,
+                        color: nil,
+                        category: nil,
+                        tags: [],
+                        score: score
+                    ))
+                }
+            }
+        }
+        
+        // Secondary Pass: CSS Background Images
+        // Search for <div style="background-image: url('...')"> style tags
+        let bgImgPattern = #"background-image:\s*url\(['"]?([^'"\)]+)['"]?\)"#
+        let bgRegex = try NSRegularExpression(pattern: bgImgPattern, options: .caseInsensitive)
+        let bgMatches = bgRegex.matches(in: html, range: NSRange(html.startIndex..., in: html))
+        
+        for match in bgMatches {
+            if match.numberOfRanges >= 2,
+               let matchRange = Range(match.range(at: 0), in: html),
+               let urlRange = Range(match.range(at: 1), in: html) {
+                   
+                let imageURLString = String(html[urlRange])
+                guard let imageURL = URL(string: imageURLString) else { continue }
+                
+                guard !seenURLs.contains(imageURL) else { continue }
+                
+                // Very basic validation - if it's not obviously a sprite or icon
+                guard ClothingDetector.isLikelyProductImage(url: imageURLString, alt: nil) else { continue }
+                
+                let context = extractNearbyText(from: html, around: matchRange, offset: 500)
+                let hasPrice = hasPricePattern(context)
+                
+                guard let productName = extractNameFromContext(context) else { continue }
+                
+                var score = 0
+                if hasPrice { score += 10 }
+                if ClothingDetector.isClothingItem(productName) { score += 50 }
+                
+                if score > 0 {
+                    seenURLs.insert(imageURL)
+                    candidates.append(ProductData(
+                        name: productName,
+                        imageURL: imageURL,
+                        price: extractPrice(from: context),
                         brand: nil,
                         size: nil,
                         color: nil,
@@ -433,12 +486,19 @@ class GenericEmailParser: EmailParser {
                 if match.numberOfRanges >= 2,
                    let range = Range(match.range(at: 1), in: context) {
                     let text = String(context[range])
-                    let cleaned = cleanProductName(text)
+                    var cleaned = cleanProductName(text)
+                    
+                    // Specific Edge Case 1: Inline Prices
+                    // If the text contains a price (e.g. "White Tee $15.99"), strip the price out instead of rejecting the whole string
+                    let priceRegex = #"\$\d+([.,]\d{2})?|\d+([.,]\d{2})?\s*USD"#
+                    if let priceRange = cleaned.range(of: priceRegex, options: [.regularExpression, .caseInsensitive]) {
+                        cleaned.removeSubrange(priceRange)
+                        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
                     
                     if !cleaned.isEmpty && 
                        !ClothingDetector.isBlacklisted(cleaned) &&
                        !ClothingDetector.isBrandName(cleaned) &&
-                       !hasPricePattern(cleaned) &&
                        cleaned.count < 100 {
                         return cleaned
                     }

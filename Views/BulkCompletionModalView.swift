@@ -12,42 +12,32 @@ struct BulkCompletionModalView: View {
         ZStack {
             PoshTheme.Colors.canvas.ignoresSafeArea()
             
-            VStack(spacing: 30) {
+            VStack(spacing: 40) {
                 // Success Icon
+                Image(systemName: "checkmark")
+                    .font(.system(size: 44, weight: .ultraLight))
+                    .foregroundColor(PoshTheme.Colors.gold)
+                    .padding(.top, 40)
+                
                 VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(PoshTheme.Colors.gold.opacity(0.15))
-                            .frame(width: 80, height: 80)
-                        
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 50))
-                            .foregroundColor(PoshTheme.Colors.gold)
-                    }
-                    .padding(.top, 20)
-                    
                     Text(itemsAdded == 1 ? "ITEM ADDED" : "UPLOAD COMPLETE")
-                        .font(.system(size: 18, weight: .bold))
-                        .tracking(3)
-                        .foregroundColor(PoshTheme.Colors.ink)
+                        .poshHeadline(size: 16)
+                    
+                    Rectangle()
+                        .fill(PoshTheme.Colors.gold)
+                        .frame(width: 30, height: 1)
                 }
                 
                 // Summary
-                VStack(spacing: 12) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("\(itemsAdded)")
-                            .font(.system(size: 24, weight: .light, design: .serif))
-                        
-                        Text(itemsAdded == 1 ? "ITEM" : "ITEMS")
-                            .font(.system(size: 14, weight: .bold))
-                            .tracking(2)
-                            .foregroundColor(PoshTheme.Colors.ink.opacity(0.6))
-                            .padding(.top, 12)
-                    }
+                VStack(spacing: 16) {
+                    Text("\(itemsAdded)")
+                        .font(PoshTheme.Typography.headline(size: 72))
+                        .foregroundColor(PoshTheme.Colors.ink)
                     
-                    Text(itemsAdded == 1 ? "added to your wardrobe" : "added to your wardrobe")
-                        .font(.system(size: 15, weight: .light))
-                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.7))
+                    Text(itemsAdded == 1 ? "NEW PIECE SECURED" : "NEW PIECES SECURED")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(3)
+                        .foregroundColor(PoshTheme.Colors.ink.opacity(0.5))
                 }
                 
                 Spacer()
@@ -58,12 +48,11 @@ struct BulkCompletionModalView: View {
                     dismiss()
                 }) {
                     Text("VIEW WARDROBE")
-                        .tracking(2)
                         .frame(maxWidth: .infinity)
                 }
                 .poshButton()
                 .padding(.horizontal, 40)
-                .padding(.bottom, 30)
+                .padding(.bottom, 50)
             }
         }
     }
