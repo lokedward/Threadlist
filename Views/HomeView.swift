@@ -163,11 +163,7 @@ struct HomeView: View {
                            let image = ImageStorageService.shared.loadImage(withID: imageID) {
                             
                             NavigationLink {
-                                // Detail View wrapped in ScrollView for zooming logic if needed
-                                ZoomableImageView(image: image)
-                                    .background(PoshTheme.Colors.canvas)
-                                    .navigationTitle("Outfit")
-                                    .navigationBarTitleDisplayMode(.inline)
+                                OutfitDetailView(outfit: outfit, heroImage: image)
                             } label: {
                                 Image(uiImage: image)
                                     .resizable()
