@@ -194,8 +194,10 @@ class StylistService {
         func getGarmentImages() async -> [Data] {
             var images: [Data] = []
             for item in items {
-                if let img = await ImageStorageService.shared.loadImage(withID: item.imageID),
-                   let data = img.jpegData(compressionQuality: 0.7) {
+                if let data = item.imageData {
+                    images.append(data)
+                } else if let img = await ImageStorageService.shared.loadImage(withID: item.imageID),
+                          let data = img.jpegData(compressionQuality: 0.7) {
                     images.append(data)
                 }
             }
