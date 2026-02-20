@@ -43,7 +43,7 @@ struct TearSheetPreviewView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Close") { dismiss() }
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(PoshTheme.Colors.ink)
+                        .foregroundColor(PoshTheme.Colors.gold)
                 }
             }
             .sheet(isPresented: $showShareSheet) {
