@@ -6,8 +6,8 @@ import SwiftData
 
 @Model
 final class Outfit {
-    var id: UUID
-    var createdAt: Date
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
     var generatedImageID: UUID?
     
     @Attribute(.externalStorage)
@@ -15,7 +15,7 @@ final class Outfit {
     
     // The items that make up this outfit
     @Relationship(inverse: \ClothingItem.outfits)
-    var items: [ClothingItem]
+    var items: [ClothingItem]? = []
     
     init(
         id: UUID = UUID(),

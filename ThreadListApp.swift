@@ -10,7 +10,8 @@ struct ThreadListApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             ClothingItem.self,
-            Category.self
+            Category.self,
+            Outfit.self
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,

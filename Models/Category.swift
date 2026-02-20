@@ -6,12 +6,12 @@ import SwiftData
 
 @Model
 final class Category {
-    var id: UUID
-    var name: String
-    var displayOrder: Int
+    var id: UUID = UUID()
+    var name: String = ""
+    var displayOrder: Int = 0
     
     @Relationship(deleteRule: .nullify)
-    var items: [ClothingItem]
+    var items: [ClothingItem]? = []
     
     init(
         id: UUID = UUID(),

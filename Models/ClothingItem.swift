@@ -6,23 +6,23 @@ import SwiftData
 
 @Model
 final class ClothingItem {
-    var id: UUID
-    var name: String
+    var id: UUID = UUID()
+    var name: String = ""
     var brand: String?
     var size: String?
-    var imageID: UUID
+    var imageID: UUID = UUID()
     
     @Attribute(.externalStorage)
     var imageData: Data?
     
-    var dateAdded: Date
-    var tags: [String]
+    var dateAdded: Date = Date()
+    var tags: [String] = []
     
     @Relationship(inverse: \Category.items)
     var category: Category?
     
     // Many-to-many relationship with Outfits
-    var outfits: [Outfit] = []
+    var outfits: [Outfit]? = []
     
     init(
         id: UUID = UUID(),
