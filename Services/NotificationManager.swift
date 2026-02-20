@@ -4,6 +4,7 @@
 import Foundation
 import UserNotifications
 import SwiftUI
+internal import Combine
 
 class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
