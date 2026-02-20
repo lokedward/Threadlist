@@ -17,7 +17,6 @@ class ImageProcessingService {
             for (index, image) in images.enumerated() {
                 group.addTask {
                     let processed = try await self.removeBackground(from: image)
-                    // Sleep slightly to prevent Vision overload if not needed, but we rely on async tasks
                     return (index, processed)
                 }
             }
@@ -31,11 +30,11 @@ class ImageProcessingService {
         }
     }
     
-    /// Attempts to remove the background using Vision. Falls back to a high-contrast B&W filter on failure.
+    /// Attempts to remove the background using Vision. Falls back to a warm film filter on failure or empty mask.
     private func removeBackground(from image: UIImage) async throws -> UIImage {
-        // Fallback closure definition
+        // Aesthetic fallback preserves color, adds a warm 'editorial' fade
         let applyFallback: () -> UIImage = {
-            return self.applyHighContrastNoirFilter(to: image) ?? image
+            return self.applyWarmAestheticFilter(to: image) ?? image
         }
         
         guard let cgImage = image.cgImage else {
@@ -43,8 +42,9 @@ class ImageProcessingService {
         }
         
         if #available(iOS 17.0, *) {
+            let orientation = CGImagePropertyOrientation(image.imageOrientation)
             let request = VNGenerateForegroundInstanceMaskRequest()
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
             
             do {
                 try handler.perform([request])
@@ -52,7 +52,13 @@ class ImageProcessingService {
                     return applyFallback()
                 }
                 
-                let mask = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
+                // Ensure there is actually a foreground to mask
+                let instances = result.allInstances
+                guard !instances.isEmpty else {
+                    return applyFallback()
+                }
+                
+                let mask = try result.generateScaledMaskForImage(forInstances: instances, from: handler)
                 let maskCI = CIImage(cvPixelBuffer: mask)
                 let originalCI = CIImage(cgImage: cgImage)
                 
@@ -69,6 +75,7 @@ class ImageProcessingService {
                 return UIImage(cgImage: finalCGImage, scale: image.scale, orientation: image.imageOrientation)
                 
             } catch {
+                print("Vision masking failed: \(error)")
                 return applyFallback()
             }
         } else {
@@ -76,24 +83,44 @@ class ImageProcessingService {
         }
     }
     
-    /// Applies an editorial high-contrast Noir filter as a stylistic fallback
-    private func applyHighContrastNoirFilter(to image: UIImage) -> UIImage? {
+    /// Applies a warm, sophisticated "film" fade. 
+    /// Great for fallbacks so items look like stylized moodboard photos rather than mistakes.
+    private func applyWarmAestheticFilter(to image: UIImage) -> UIImage? {
         guard let ciImage = CIImage(image: image) else { return nil }
         
-        let noir = CIFilter.photoEffectNoir()
-        noir.inputImage = ciImage
-        guard let noirOutput = noir.outputImage else { return nil }
+        // 1. Warmth (Color Controls - Slight saturation boost, slight brightness)
+        let colorControls = CIFilter.colorControls()
+        colorControls.inputImage = ciImage
+        colorControls.saturation = 0.95
+        colorControls.contrast = 1.05
+        colorControls.brightness = 0.02
+        guard let step1 = colorControls.outputImage else { return nil }
         
-        let contrast = CIFilter.colorControls()
-        contrast.inputImage = noirOutput
-        contrast.contrast = 1.2
-        contrast.brightness = 0.05
-        
-        guard let finalOutput = contrast.outputImage,
-              let cgImage = context.createCGImage(finalOutput, from: finalOutput.extent) else {
+        // 2. Vintage Fade / Warm tone (Sepia tone at very low intensity)
+        let sepia = CIFilter.sepiaTone()
+        sepia.inputImage = step1
+        sepia.intensity = 0.15
+        guard let step2 = sepia.outputImage,
+              let cgImage = context.createCGImage(step2, from: step2.extent) else {
             return nil
         }
         
         return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+}
+
+extension CGImagePropertyOrientation {
+    init(_ uiOrientation: UIImage.Orientation) {
+        switch uiOrientation {
+        case .up: self = .up
+        case .upMirrored: self = .upMirrored
+        case .down: self = .down
+        case .downMirrored: self = .downMirrored
+        case .left: self = .left
+        case .leftMirrored: self = .leftMirrored
+        case .right: self = .right
+        case .rightMirrored: self = .rightMirrored
+        @unknown default: self = .up
+        }
     }
 }
