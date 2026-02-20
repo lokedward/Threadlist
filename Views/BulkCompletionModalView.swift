@@ -14,8 +14,8 @@ struct BulkCompletionModalView: View {
             
             VStack(spacing: 40) {
                 // Success Icon
-                Image(systemName: "checkmark")
-                    .font(.system(size: 44))
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 44, weight: .light))
                     .foregroundColor(PoshTheme.Colors.gold)
                     .padding(.top, 40)
                 
