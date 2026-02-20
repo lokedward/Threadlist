@@ -215,7 +215,7 @@ struct StylistView: View {
                             .font(.system(size: 9))
                             .foregroundColor(PoshTheme.Colors.gold)
                         
-                        Text("\(subscription.remainingGenerations)")
+                        Text(subscription.currentTier == .atelier ? "∞" : "\(subscription.remainingGenerations)")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(PoshTheme.Colors.ink)
                     }
