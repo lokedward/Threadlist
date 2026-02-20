@@ -17,6 +17,7 @@ final class Outfit {
     @Relationship(inverse: \ClothingItem.outfits)
     var items: [ClothingItem]
     
+    init(
         id: UUID = UUID(),
         createdAt: Date = Date(),
         generatedImageID: UUID? = nil,
